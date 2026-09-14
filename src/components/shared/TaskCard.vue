@@ -25,12 +25,12 @@
             {{ priorityLabel }}
           </span>
 
-          <!-- Due Date & Risk Alert -->
-          <span v-if="isRisk" class="badge-risk">
+          <!-- Due Date & Risk Alert (only when not completed) -->
+          <span v-if="isRisk && !isCompleted" class="badge-risk">
             <i class="bi bi-exclamation-triangle-fill"></i>
             {{ riskLabel }}
           </span>
-          <span v-else-if="activity.dueDate" class="badge-due-date">
+          <span v-else-if="activity.dueDate && !isCompleted" class="badge-due-date">
             <i class="bi bi-calendar-event me-1"></i>
             {{ formattedDate }}
           </span>

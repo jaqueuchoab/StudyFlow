@@ -1,188 +1,203 @@
 <template>
-  <div class="study-card urgent-deadlines-card p-4 h-100 d-flex flex-column">
-    <!-- Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom-subtle">
-      <div class="d-flex align-items-center gap-2">
-        <div class="urgent-header-icon">
-          <i class="bi bi-alarm-fill"></i>
-        </div>
-        <div>
-          <h4 class="mb-0 text-primary">Prazos Iminentes</h4>
-          <small class="text-muted">Atividades com entrega mais próxima</small>
-        </div>
-      </div>
-      <router-link to="/disciplinas" class="small fw-bold text-decoration-none" style="color: #513490;">
-        Ver todas
-        <i class="bi bi-chevron-right ms-1"></i>
-      </router-link>
+  <div class="risk-zone-section d-flex flex-column h-100">
+    <!-- Header matching Figma -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h3 class="section-title mb-0">Zona de Risco</h3>
+      <span class="badge-priority-alert">Atenção Prioritária</span>
     </div>
 
-    <!-- Items List -->
-    <div v-if="activities && activities.length > 0" class="urgent-list flex-grow-1 d-flex flex-column gap-2">
+    <!-- 2 Cards Side-by-Side matching Figma -->
+    <div v-if="criticalActivities.length > 0" class="row g-3 flex-grow-1">
       <div 
-        v-for="item in activities" 
+        v-for="item in criticalActivities" 
         :key="item.id" 
-        class="urgent-task-item p-3 d-flex align-items-center justify-content-between"
-        :class="{ 'item-risk-border': isRisk(item) }"
+        class="col-md-6 d-flex"
       >
-        <!-- Left: Quick check + Title + Discipline -->
-        <div class="d-flex align-items-center gap-3 min-w-0 flex-grow-1">
-          <!-- Fast Complete Button -->
-          <button 
-            class="btn-fast-check flex-shrink-0" 
-            :class="{ active: item.status === 'concluida' }"
-            :title="item.status === 'concluida' ? 'Reabrir atividade' : 'Concluir atividade'"
-            @click="$emit('status-change', { id: item.id, status: item.status === 'concluida' ? 'a_fazer' : 'concluida' })"
-          >
-            <i :class="item.status === 'concluida' ? 'bi bi-check2' : 'bi bi-circle'"></i>
-          </button>
-
-          <div class="min-w-0 flex-grow-1">
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-              <span class="badge-parent-pill" :style="{ borderColor: item.parentColor, color: item.parentColor }">
+        <div class="risk-card p-3 p-xl-4 h-100 w-100 d-flex flex-column justify-content-between">
+          <div>
+            <!-- Tags row: Discipline + Urgency -->
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+              <span 
+                class="tag-discipline"
+                :class="getDisciplineTagClass(item)"
+                :style="getCustomDisciplineStyle(item)"
+              >
                 {{ item.parentName }}
               </span>
-              <CategoryBadge :category="item.category" />
+
+              <span class="tag-urgency">
+                <i class="bi bi-clock me-1"></i>
+                {{ formatUrgency(item) }}
+              </span>
             </div>
 
-            <div class="urgent-task-title text-truncate fw-bold" :class="{ 'text-decoration-line-through text-muted': item.status === 'concluida' }">
+            <!-- Title -->
+            <h4 class="risk-card-title mb-2 text-truncate" :title="item.name">
               {{ item.name }}
-            </div>
-          </div>
-        </div>
+            </h4>
 
-        <!-- Right: Deadline indicator badge -->
-        <div class="ms-3 flex-shrink-0 text-end">
-          <div v-if="isRisk(item)" class="badge-risk">
-            <i class="bi bi-exclamation-circle-fill me-1"></i>
-            {{ formatDue(item) }}
+            <!-- Description / Snippet -->
+            <p class="risk-card-desc mb-3">
+              {{ item.description || 'Nenhuma descrição informada para esta atividade acadêmica.' }}
+            </p>
           </div>
-          <div v-else class="badge-normal-date">
-            <i class="bi bi-calendar3 me-1"></i>
-            {{ formatDate(item.dueDate) }}
+
+          <!-- Footer: Date & Time -->
+          <div class="risk-card-footer pt-2 border-top-subtle d-flex align-items-center text-muted small">
+            <i class="bi bi-calendar3 me-2"></i>
+            <span>{{ formatDateTime(item) }}</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Empty State -->
-    <div v-else class="text-center py-4 text-muted flex-grow-1 d-flex flex-column align-items-center justify-content-center">
-      <i class="bi bi-check-circle-fill fs-2 mb-2" style="color: var(--color-accent-dark);"></i>
-      <p class="mb-0 fw-semibold">Tudo em dia!</p>
-      <small class="text-muted">Nenhuma atividade com prazo iminente no momento.</small>
+    <div v-else class="risk-card p-4 text-center text-muted">
+      <i class="bi bi-shield-check text-success fs-2 mb-2 d-block"></i>
+      <h6 class="fw-bold mb-1 text-dark">Nenhum prazo crítico no momento!</h6>
+      <p class="small mb-0">Você não tem entregas nos próximos 3 dias. Bom trabalho!</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import CategoryBadge from '../ui/CategoryBadge.vue'
-import { formatDate, getDaysRemaining, isRiskZone, isOverdue } from '../../utils/dateUtils'
+import { computed } from 'vue'
+import { getDaysRemaining, parseDate, isOverdue } from '../../utils/dateUtils'
 
-defineProps({
+const props = defineProps({
   activities: {
     type: Array,
     default: () => []
   }
 })
 
-defineEmits(['status-change'])
+const criticalActivities = computed(() => {
+  // Show up to 2 top critical items (matching Figma 2 cards)
+  return props.activities.slice(0, 2)
+})
 
-function isRisk(item) {
-  return isRiskZone(item)
+function formatUrgency(item) {
+  if (isOverdue(item)) return 'Atrasada'
+  const days = getDaysRemaining(item.dueDate)
+  if (days === 0) return 'Entrega hoje'
+  if (days === 1) return 'Entrega amanhã'
+  return `Entrega em ${days} dias`
 }
 
-function formatDue(item) {
-  if (isOverdue(item)) return 'Atrasada!'
-  const days = getDaysRemaining(item.dueDate)
-  if (days === 0) return 'Vence hoje!'
-  if (days === 1) return 'Vence amanhã!'
-  return `Em ${days} dias`
+function getDisciplineTagClass(item) {
+  const name = (item.parentName || '').toLowerCase()
+  if (name.includes('inteligência') || name.includes('ia') || name.includes('banco')) {
+    return 'tag-lime'
+  }
+  return 'tag-purple'
+}
+
+function getCustomDisciplineStyle(item) {
+  if (item.parentColor && item.parentColor !== '#A184E5' && item.parentColor !== '#8366C5') {
+    return {
+      backgroundColor: `${item.parentColor}18`,
+      color: item.parentColor
+    }
+  }
+  return {}
+}
+
+function formatDateTime(item) {
+  if (!item.dueDate) return 'Sem prazo definido'
+  const date = parseDate(item.dueDate)
+  if (!date || isNaN(date.getTime())) return item.dueDate
+
+  const weekDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
+  const weekDay = weekDays[date.getDay()]
+  
+  // Example default or mock hour for university assignments
+  return `${weekDay}, 23:59`
 }
 </script>
 
 <style scoped>
-.urgent-deadlines-card {
-  background-color: var(--color-card-bg);
+.risk-zone-section {
+  width: 100%;
 }
 
-.urgent-header-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background-color: var(--color-risk-light);
-  color: var(--color-risk);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.15rem;
-}
-
-.urgent-task-item {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  transition: all 0.2s ease;
-}
-
-.urgent-task-item:hover {
-  border-color: #513490;
-  box-shadow: var(--shadow-sm);
-  transform: translateX(2px);
-}
-
-.urgent-task-item.item-risk-border {
-  border-left: 4px solid var(--color-risk);
-}
-
-.urgent-task-title {
-  font-size: 0.92rem;
+.section-title {
+  font-size: 1.35rem;
+  font-weight: 800;
   color: var(--color-text-primary);
+  letter-spacing: -0.02em;
 }
 
-.badge-parent-pill {
-  font-size: 0.72rem;
+.badge-priority-alert {
+  font-size: 0.78rem;
   font-weight: 700;
-  padding: 0.2rem 0.55rem;
+  color: #DC2626;
+  background-color: #FEE2E2;
+  padding: 0.3rem 0.8rem;
   border-radius: var(--border-radius-pill);
-  border: 1px solid;
-  background-color: #fff;
 }
 
-.badge-normal-date {
+.risk-card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.risk-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.tag-discipline {
   font-size: 0.76rem;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  background: #F3F1E7;
-  padding: 0.3rem 0.65rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
   border-radius: var(--border-radius-pill);
 }
 
-.btn-fast-check {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid var(--color-border);
-  background: #fff;
-  color: var(--color-text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+.tag-lime {
+  background-color: #EBF3CE;
+  color: #55600c;
 }
 
-.btn-fast-check:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent-dark);
+.tag-purple {
+  background-color: #ECE8FA;
+  color: #6D48C5;
 }
 
-.btn-fast-check.active {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
+.tag-urgency {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--border-radius-pill);
+  background-color: #FEE2E2;
+  color: #EA580C;
+}
+
+.risk-card-title {
+  font-size: 1.08rem;
+  font-weight: 800;
   color: var(--color-text-primary);
+  line-height: 1.3;
 }
 
-.border-bottom-subtle {
-  border-bottom: 1px solid var(--color-border-subtle);
+.risk-card-desc {
+  font-size: 0.86rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.risk-card-footer {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.border-top-subtle {
+  border-top: 1px solid var(--color-border);
 }
 </style>

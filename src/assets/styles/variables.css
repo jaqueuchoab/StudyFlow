@@ -1,49 +1,52 @@
 :root {
-  /* Graphic Garden Palette */
-  --color-primary: #A184E5;
-  --color-primary-dark: #8E6FD6;
-  --color-primary-light: #F0EBFC;
-  --color-primary-subtle: rgba(161, 132, 229, 0.15);
-  --color-primary-glow: rgba(161, 132, 229, 0.35);
+  /* Figma Palette */
+  --color-primary: #8366C5;
+  --color-primary-dark: #6D48C5;
+  --color-primary-light: #ECE8FA;
+  --color-primary-subtle: rgba(131, 102, 197, 0.15);
+  --color-primary-glow: rgba(131, 102, 197, 0.35);
 
   --color-accent: #C2D039;
-  --color-accent-dark: #AFC026;
-  --color-accent-light: #F7F9DB;
+  --color-accent-dark: #A5B620;
+  --color-accent-light: #EBF3CE;
   --color-accent-subtle: rgba(194, 208, 57, 0.2);
 
   --color-bg: #F5F4E3;
-  --color-card-bg: #FCFBF5;
-  --color-surface-hover: #F8F7ED;
-  --color-border: #E8E5D3;
-  --color-border-subtle: rgba(161, 132, 229, 0.12);
+  --color-card-bg: #FFFFFF;
+  --color-surface-hover: #FAF9F0;
+  --color-border: #EFECE0;
+  --color-border-subtle: rgba(131, 102, 197, 0.12);
 
-  --color-text-primary: #2E2A27;
-  --color-text-secondary: #6B665F;
-  --color-text-muted: #99948D;
+  --color-text-primary: #363636;
+  --color-text-secondary: #52525B;
+  --color-text-muted: #71717A;
   --color-text-light: #F5F4E3;
 
   /* Status Colors */
-  --color-risk: #E06D53;
-  --color-risk-light: #FDEEEB;
-  --color-warning: #EBB340;
-  --color-warning-light: #FEF9EB;
-  --color-info: #513490;
-  --color-info-light: rgba(81, 52, 144, 0.12);
+  --color-risk: #E15B5B;
+  --color-risk-dark: #DC2626;
+  --color-risk-light: #FEE2E2;
+  --color-warning: #D97706;
+  --color-warning-light: #FEF3C7;
+  --color-info: #8366C5;
+  --color-info-light: #ECE8FA;
+  --color-success: #16A34A;
+  --color-success-light: #DCFCE7;
 
   /* Typography */
   --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Layout */
-  --sidebar-width: 260px;
-  --right-panel-width: 330px;
-  --border-radius-card: 20px;
-  --border-radius-pill: 50px;
-  --border-radius-sm: 12px;
+  /* Layout & Reduced Border Radius */
+  --sidebar-width: 280px;
+  --border-radius-card: 8px;
+  --border-radius-pill: 8px;
+  --border-radius-modal: 12px;
+  --border-radius-sm: 6px;
 
   /* Shadows */
-  --shadow-sm: 0 4px 12px rgba(46, 42, 39, 0.04);
-  --shadow-md: 0 10px 25px rgba(161, 132, 229, 0.08);
-  --shadow-lg: 0 18px 36px rgba(161, 132, 229, 0.14);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 25px rgba(131, 102, 197, 0.12);
   --shadow-glow-accent: 0 8px 20px rgba(194, 208, 57, 0.35);
-  --shadow-glow-primary: 0 8px 20px rgba(161, 132, 229, 0.3);
+  --shadow-glow-primary: 0 8px 20px rgba(131, 102, 197, 0.3);
 }

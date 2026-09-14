@@ -1,232 +1,135 @@
 <template>
-  <div class="discipline-form-view pb-5">
-    <!-- Breadcrumb / Header -->
-    <div class="mb-4">
-      <router-link to="/disciplinas" class="text-decoration-none text-muted small fw-semibold d-inline-flex align-items-center gap-1 mb-2">
-        <i class="bi bi-arrow-left"></i>
-        <span>Voltar para Minhas Disciplinas</span>
-      </router-link>
-      <h2 class="text-primary fw-extrabold mb-1">
-        {{ isEditing ? 'Editar Disciplina' : 'Cadastrar Nova Disciplina' }}
-      </h2>
-      <p class="text-muted mb-0">
-        {{ isEditing ? 'Atualize as informações da matéria e organize suas atividades.' : 'Preencha os dados da matéria para começar a planejar seu semestre.' }}
-      </p>
+  <div class="discipline-form-page-wrapper">
+    <!-- Underlying Page Content (blurred in background) matching Figma -->
+    <div class="background-underlay" aria-hidden="true">
+      <DisciplineList :is-background="true" />
     </div>
 
-    <div class="row g-4">
-      <!-- Main Form Card -->
-      <div class="col-lg-8">
-        <div class="study-card p-4 p-md-5">
-          <form @submit.prevent="handleSubmit">
-            <!-- Nome da Disciplina -->
-            <div class="mb-4">
-              <label class="form-label">
-                Nome da Disciplina <span class="text-danger">*</span>
-              </label>
+    <!-- Modal Backdrop Overlay with Blur matching Figma -->
+    <div class="modal-backdrop-blur" @click.self="handleCancel">
+      <!-- Modal Card -->
+      <div class="modal-card p-4 p-sm-4.5">
+        <!-- Header with Title & Close button -->
+        <div class="d-flex align-items-center justify-content-between mb-4">
+          <h2 class="modal-title mb-0">
+            {{ isEditing ? 'Editar Disciplina' : 'Nova Disciplina' }}
+          </h2>
+          <button 
+            type="button" 
+            class="btn-close-modal" 
+            title="Fechar"
+            @click="handleCancel"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <!-- Form Body -->
+        <form @submit.prevent="handleSubmit">
+          <!-- 1. Nome da disciplina -->
+          <div class="form-group mb-3.5">
+            <label class="form-label-figma">
+              Nome da disciplina <span class="text-danger">*</span>
+            </label>
+            <input 
+              v-model="form.name" 
+              type="text" 
+              class="form-control-figma" 
+              placeholder="Ex: Sistemas Distribuídos"
+              required 
+              autofocus
+            />
+          </div>
+
+          <!-- 2. Professor responsável -->
+          <div class="form-group mb-3.5">
+            <label class="form-label-figma">
+              Professor responsável
+            </label>
+            <input 
+              v-model="form.professor" 
+              type="text" 
+              class="form-control-figma" 
+              placeholder="Ex: Prof. Dr. Ricardo Santos"
+            />
+          </div>
+
+          <!-- 3. Curso e Carga horária (Row) -->
+          <div class="row g-3 mb-4">
+            <!-- Curso -->
+            <div class="col-sm-7">
+              <label class="form-label-figma">Curso</label>
               <input 
-                v-model="form.name" 
+                v-model="form.course" 
                 type="text" 
-                class="form-control form-control-lg" 
-                placeholder="Ex: Sistemas Operacionais"
-                required 
+                class="form-control-figma" 
+                placeholder="Ex: Ciência da Computação"
               />
             </div>
 
-            <!-- Professor Responsável -->
-            <div class="mb-4">
-              <label class="form-label">
-                Professor(a) Responsável <span class="text-danger">*</span>
-              </label>
-              <div class="input-group">
-                <span class="input-group-text bg-white border-end-0 text-primary">
-                  <i class="bi bi-person-badge"></i>
-                </span>
+            <!-- Carga horária -->
+            <div class="col-sm-5">
+              <label class="form-label-figma">Carga horária</label>
+              <div class="input-with-suffix">
                 <input 
-                  v-model="form.professor" 
-                  type="text" 
-                  class="form-control border-start-0 ps-0" 
-                  placeholder="Ex: Prof. Dr. Mark Lee"
-                  required 
+                  v-model.number="form.workload" 
+                  type="number" 
+                  min="1" 
+                  max="500" 
+                  class="form-control-figma input-suffix-field" 
+                  placeholder="72"
                 />
+                <span class="suffix-text">horas</span>
               </div>
             </div>
-
-            <!-- Row: Curso e Carga Horária -->
-            <div class="row g-3 mb-4">
-              <div class="col-md-7">
-                <label class="form-label">Curso / Graduação</label>
-                <input 
-                  v-model="form.course" 
-                  type="text" 
-                  class="form-control" 
-                  placeholder="Ex: Ciência da Computação"
-                />
-              </div>
-
-              <div class="col-md-5">
-                <label class="form-label">Carga Horária (Horas)</label>
-                <div class="input-group">
-                  <input 
-                    v-model.number="form.workload" 
-                    type="number" 
-                    min="1" 
-                    max="500" 
-                    class="form-control" 
-                    placeholder="60"
-                  />
-                  <span class="input-group-text bg-white text-muted">h</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Descrição Opcional -->
-            <div class="mb-4">
-              <label class="form-label">Ementa / Descrição Breve</label>
-              <textarea 
-                v-model="form.description" 
-                class="form-control" 
-                rows="3" 
-                placeholder="Tópicos principais abordados, referências bibliográficas..."
-              ></textarea>
-            </div>
-
-            <!-- Identidade Visual do Card (Cores do tema Graphic Garden) -->
-            <div class="mb-4">
-              <label class="form-label">Estilo do Card na Aplicação</label>
-              <div class="d-flex flex-wrap gap-2">
-                <button 
-                  v-for="color in themeColorOptions" 
-                  :key="color.hex"
-                  type="button" 
-                  class="theme-color-btn"
-                  :class="{ active: form.themeColor === color.hex }"
-                  :style="{ backgroundColor: color.hex }"
-                  @click="form.themeColor = color.hex"
-                  :title="color.name"
-                >
-                  <i v-if="form.themeColor === color.hex" class="bi bi-check-lg" :style="{ color: color.checkColor }"></i>
-                </button>
-              </div>
-            </div>
-
-            <!-- Gatilho da especificação (Spec 4.4: "+ Adicionar atividade" via modal) -->
-            <div class="p-3 mb-4 add-task-trigger-box d-flex flex-wrap align-items-center justify-content-between gap-2">
-              <div>
-                <span class="fw-bold text-primary d-block">Já tem tarefas agendadas para esta matéria?</span>
-                <small class="text-muted">Adicione provas, seminários ou trabalhos avaliativos agora mesmo.</small>
-              </div>
-              <button 
-                type="button" 
-                class="btn-study-outline py-1 px-3" 
-                @click="openTaskModal"
-              >
-                <i class="bi bi-plus-circle-fill me-1"></i>
-                <span>+ Adicionar atividade</span>
-              </button>
-            </div>
-
-            <!-- Atividades temporárias criadas nesta sessão -->
-            <div v-if="pendingActivitiesToSave.length > 0" class="mb-4">
-              <h6 class="text-primary mb-2">Atividades a vincular ({{ pendingActivitiesToSave.length }}):</h6>
-              <div class="list-group">
-                <div 
-                  v-for="(act, idx) in pendingActivitiesToSave" 
-                  :key="idx" 
-                  class="list-group-item d-flex align-items-center justify-content-between py-2 px-3"
-                >
-                  <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary-subtle text-primary rounded-pill">{{ act.category }}</span>
-                    <span class="fw-semibold">{{ act.name }}</span>
-                    <small class="text-muted">({{ act.dueDate }})</small>
-                  </div>
-                  <button type="button" class="btn btn-sm text-danger p-0" @click="pendingActivitiesToSave.splice(idx, 1)">
-                    <i class="bi bi-x-circle"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Form Actions -->
-            <div class="d-flex align-items-center justify-content-end gap-3 pt-3 border-top-subtle">
-              <router-link to="/disciplinas" class="btn-study-outline">
-                Cancelar
-              </router-link>
-              <button type="submit" class="btn-study-accent">
-                <i class="bi bi-check2-circle"></i>
-                <span>{{ isEditing ? 'Salvar Alterações' : 'Cadastrar Disciplina' }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Helper / Preview Column -->
-      <div class="col-lg-4">
-        <div class="study-card p-4">
-          <h5 class="text-primary mb-3">Prévia do Card</h5>
-          <div class="study-card p-3 mb-3" :style="{ borderTop: '4px solid ' + form.themeColor }">
-            <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 mb-2 fw-bold small">
-              {{ form.course || 'Curso' }} · {{ form.workload || 0 }}h
-            </span>
-            <h5 class="mb-1 text-truncate">{{ form.name || 'Nome da Disciplina' }}</h5>
-            <small class="text-muted d-block mb-2">Prof. {{ form.professor || 'Nome do Professor' }}</small>
-            <p class="small text-muted mb-0 text-truncate-2">
-              {{ form.description || 'Descrição da ementa e atividades...' }}
-            </p>
           </div>
-          <div class="alert alert-light border small text-muted mb-0">
-            <i class="bi bi-info-circle-fill text-primary me-1"></i>
-            Ao salvar, você poderá gerenciar todas as notas, entregas e prazos detalhados na tela da disciplina.
+
+          <!-- Footer Actions matching Figma -->
+          <div class="d-flex align-items-center justify-content-end gap-3 pt-2">
+            <button 
+              type="button" 
+              class="btn-cancel" 
+              @click="handleCancel"
+            >
+              Cancelar
+            </button>
+            
+            <button 
+              type="submit" 
+              class="btn-figma-save"
+            >
+              <i class="bi bi-check-lg me-1"></i>
+              <span>{{ isEditing ? 'Salvar Alterações' : 'Salvar Disciplina' }}</span>
+            </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
-
-    <!-- Task Modal for trigger -->
-    <TaskFormModal
-      :is-open="isTaskModalOpen"
-      :parent-name="form.name || 'Nova Disciplina'"
-      :parent-id="form.id"
-      @close="isTaskModalOpen = false"
-      @saved="handleActivityAdded"
-    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import TaskFormModal from '../components/shared/TaskFormModal.vue'
+import DisciplineList from './DisciplineList.vue'
 import {
   getDisciplineById,
-  saveDiscipline,
-  saveActivity
+  saveDiscipline
 } from '../services/storage'
 
 const route = useRoute()
 const router = useRouter()
 
 const isEditing = computed(() => Boolean(route.params.id))
-const isTaskModalOpen = ref(false)
-const pendingActivitiesToSave = ref([])
-
-const themeColorOptions = [
-  { hex: '#A184E5', name: 'Roxo Graphic Garden', checkColor: '#fff' },
-  { hex: '#C2D039', name: 'Verde-limão Graphic Garden', checkColor: '#2E2A27' },
-  { hex: '#F5F4E3', name: 'Creme Graphic Garden', checkColor: '#A184E5' },
-  { hex: '#E06D53', name: 'Coral Suave', checkColor: '#fff' },
-  { hex: '#513490', name: 'Roxo Escuro (#513490)', checkColor: '#fff' }
-]
 
 const form = ref({
   id: '',
   name: '',
   professor: '',
-  course: 'Ciência da Computação',
-  workload: 60,
+  course: '',
+  workload: null,
   description: '',
-  themeColor: '#A184E5',
+  themeColor: '#8366C5',
   illustration: 'desktop'
 })
 
@@ -238,81 +141,211 @@ onMounted(() => {
     } else {
       router.push('/disciplinas')
     }
+  } else {
+    // Mode Cadastro: Campos sem preenchimento
+    form.value = {
+      id: '',
+      name: '',
+      professor: '',
+      course: '',
+      workload: null,
+      description: '',
+      themeColor: '#8366C5',
+      illustration: 'desktop'
+    }
   }
 })
 
-function openTaskModal() {
-  isTaskModalOpen.value = true
-}
-
-function handleActivityAdded(activityData) {
-  if (isEditing.value) {
-    // If editing existing discipline, save immediately
-    saveActivity({ ...activityData, parentType: 'discipline', parentId: form.value.id })
+function handleCancel() {
+  if (isEditing.value && form.value.id) {
+    router.push(`/disciplinas/${form.value.id}`)
   } else {
-    // Stage for saving after discipline is created
-    pendingActivitiesToSave.value.push(activityData)
+    router.push('/disciplinas')
   }
 }
 
 function handleSubmit() {
-  if (!form.value.name.trim() || !form.value.professor.trim()) return
+  if (!form.value.name.trim()) return
 
-  const saved = saveDiscipline(form.value)
+  const saved = saveDiscipline({
+    ...form.value,
+    workload: form.value.workload ? Number(form.value.workload) : 60
+  })
 
-  // Save any pending activities that were added via the modal before creating
-  if (pendingActivitiesToSave.value.length > 0) {
-    const disciplineId = saved.id || form.value.id
-    pendingActivitiesToSave.value.forEach(act => {
-      saveActivity({ ...act, parentType: 'discipline', parentId: disciplineId })
-    })
-  }
-
-  router.push('/disciplinas/' + (saved.id || form.value.id))
+  router.push(`/disciplinas/${saved.id || form.value.id}`)
 }
 </script>
 
 <style scoped>
-.fw-extrabold {
-  font-weight: 800;
+.discipline-form-page-wrapper {
+  position: relative;
+  min-height: 100vh;
 }
 
-.add-task-trigger-box {
-  background-color: var(--color-primary-light);
-  border: 1.5px dashed var(--color-primary);
-  border-radius: var(--border-radius-sm);
+/* Background Underlay (blurred) */
+.background-underlay {
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.85;
 }
 
-.theme-color-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+/* Backdrop Overlay with Blur matching Figma Frame 9:1126 */
+.modal-backdrop-blur {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(46, 42, 39, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1050;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  padding: 1.5rem;
+  animation: backdropFade 0.2s ease;
+}
+
+@keyframes backdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal Card */
+.modal-card {
+  width: 100%;
+  max-width: 600px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.btn-close-modal {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #71717A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s;
+  font-size: 1rem;
+  transition: all 0.2s ease;
 }
 
-.theme-color-btn:hover {
-  transform: scale(1.15);
+.btn-close-modal:hover {
+  background-color: #F4F4F5;
+  color: #363636;
 }
 
-.theme-color-btn.active {
-  outline: 2px solid var(--color-text-primary);
+.form-label-figma {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.4rem;
 }
 
-.border-top-subtle {
-  border-top: 1px solid var(--color-border-subtle);
+.form-control-figma {
+  width: 100%;
+  background-color: #FAF8F2;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.94rem;
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.text-truncate-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.form-control-figma:focus {
+  background-color: #FFFFFF;
+  border-color: #8366C5;
+  box-shadow: 0 0 0 3px rgba(131, 102, 197, 0.15);
+}
+
+.form-control-figma::placeholder {
+  color: #A1A1AA;
+}
+
+/* Suffix wrapper for Carga Horária */
+.input-with-suffix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-suffix-field {
+  padding-right: 52px !important;
+}
+
+.suffix-text {
+  position: absolute;
+  right: 14px;
+  color: #71717A;
+  font-size: 0.88rem;
+  pointer-events: none;
+}
+
+/* Action Buttons */
+.btn-cancel {
+  background: transparent;
+  border: none;
+  color: #52525B;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  border-radius: var(--border-radius-pill);
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background-color: #F4F4F5;
+  color: #363636;
+}
+
+.btn-figma-save {
+  background-color: #C2D039;
+  color: #363636;
+  border: none;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 0.65rem 1.45rem;
+  border-radius: var(--border-radius-pill);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.btn-figma-save:hover {
+  background-color: #AFC026;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(194, 208, 57, 0.35);
 }
 </style>

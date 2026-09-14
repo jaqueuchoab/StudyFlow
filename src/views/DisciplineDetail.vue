@@ -1,151 +1,216 @@
 <template>
   <div v-if="discipline" class="discipline-detail-view pb-5">
-    <!-- Breadcrumb & Back -->
-    <div class="mb-3">
-      <router-link to="/disciplinas" class="text-decoration-none text-muted small fw-semibold d-inline-flex align-items-center gap-1">
-        <i class="bi bi-arrow-left"></i>
-        <span>Voltar para Minhas Disciplinas</span>
+    <!-- Breadcrumb matching Figma -->
+    <div class="breadcrumb-bar mb-4">
+      <router-link to="/disciplinas" class="breadcrumb-link">
+        <i class="bi bi-arrow-left me-1"></i>
+        Minhas Disciplinas
       </router-link>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-current">{{ discipline.name }}</span>
     </div>
 
-    <!-- Header Card -->
-    <div class="study-card discipline-header-card p-4 p-md-5 mb-4">
-      <div class="d-flex flex-column flex-md-row align-items-md-start justify-content-between gap-4">
-        <!-- Main details -->
-        <div class="d-flex align-items-start gap-3 min-w-0 flex-grow-1">
-          <div class="detail-icon-circle" :style="{ backgroundColor: getSoftBg(discipline.themeColor) }">
-            <i class="bi bi-book-half" :style="{ color: discipline.themeColor || '#A184E5' }"></i>
-          </div>
-
-          <div class="min-w-0 flex-grow-1">
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-              <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fw-bold small">
-                {{ discipline.course || 'Graduação' }}
-              </span>
-              <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1 fw-bold small">
-                <i class="bi bi-clock me-1"></i>{{ discipline.workload }} horas
-              </span>
-              <span v-if="riskCount > 0" class="badge-risk">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                {{ riskCount }} na Zona de Risco
-              </span>
-            </div>
-
-            <h2 class="discipline-header-title mb-2 text-primary fw-extrabold">
-              {{ discipline.name }}
-            </h2>
-
-            <div class="d-flex flex-wrap align-items-center gap-3 text-muted mb-3">
-              <div>
-                <i class="bi bi-person-workspace text-primary me-1"></i>
-                Professor: <strong>{{ discipline.professor }}</strong>
-              </div>
-            </div>
-
-            <p v-if="discipline.description" class="text-muted mb-0 max-w-2xl">
-              {{ discipline.description }}
-            </p>
+    <!-- Top Header Card matching Figma -->
+    <div class="header-card p-4 p-md-4.5 mb-4">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <!-- Left: Title & Professor -->
+        <div>
+          <h1 class="discipline-title mb-2">{{ discipline.name }}</h1>
+          <div class="discipline-professor d-flex align-items-center gap-2 text-muted">
+            <i class="bi bi-person"></i>
+            <span>Professor: <strong>{{ discipline.professor || 'Não informado' }}</strong></span>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+        <!-- Right: Actions Buttons matching Figma -->
+        <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0">
           <button 
-            class="btn-study-outline py-2 px-3" 
-            @click="$router.push(`/disciplinas/${discipline.id}/editar`)"
-            title="Editar dados da matéria"
-          >
-            <i class="bi bi-pencil me-1"></i>
-            <span>Editar</span>
-          </button>
-          <button 
-            class="btn-study-outline text-danger py-2 px-3" 
-            @click="confirmDelete"
-            title="Excluir disciplina"
-          >
-            <i class="bi bi-trash3 me-1"></i>
-            <span>Excluir</span>
-          </button>
-          <button 
-            class="btn-study-accent py-2 px-3" 
+            class="btn-figma-accent" 
             @click="openAddActivityModal"
           >
             <i class="bi bi-plus-lg me-1"></i>
-            <span>Nova Atividade</span>
+            Adicionar Atividade
+          </button>
+
+          <button 
+            class="btn-figma-outline" 
+            @click="$router.push(`/disciplinas/${discipline.id}/editar`)"
+          >
+            <i class="bi bi-pencil me-2"></i>
+            Editar Disciplina
+          </button>
+
+          <button 
+            class="btn-figma-icon-delete" 
+            title="Excluir disciplina"
+            @click="confirmDelete"
+          >
+            <i class="bi bi-trash3"></i>
           </button>
         </div>
       </div>
+    </div>
 
-      <!-- Discipline Stats and Progress -->
-      <div class="row g-3 mt-4 pt-4 border-top-subtle">
-        <div class="col-sm-4">
-          <div class="stat-mini-box p-3 rounded-3">
-            <span class="small text-muted fw-bold text-uppercase">Progresso Geral</span>
-            <div class="d-flex align-items-center justify-content-between mt-1 mb-2">
-              <span class="fs-4 fw-extrabold text-primary">{{ progressPercent }}%</span>
-              <span class="small text-muted">{{ completedCount }} de {{ activities.length }} entregues</span>
-            </div>
-            <div class="progress-bar-wrap">
-              <div class="progress-bar-fill" :style="{ width: progressPercent + '%' }"></div>
-            </div>
-          </div>
+    <!-- Filter Bar matching Figma -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+      <!-- Status Tabs matching Figma -->
+      <div class="filter-tabs-wrap d-flex align-items-center gap-1.5 flex-wrap">
+        <button 
+          class="btn-tab-pill" 
+          :class="{ active: selectedStatus === 'all' }"
+          @click="selectedStatus = 'all'"
+        >
+          Todas <span class="count-badge">({{ activities.length }})</span>
+        </button>
+        <button 
+          class="btn-tab-pill" 
+          :class="{ active: selectedStatus === 'a_fazer' }"
+          @click="selectedStatus = 'a_fazer'"
+        >
+          A Fazer <span class="count-badge">({{ countByStatus('a_fazer') }})</span>
+        </button>
+        <button 
+          class="btn-tab-pill" 
+          :class="{ active: selectedStatus === 'em_andamento' }"
+          @click="selectedStatus = 'em_andamento'"
+        >
+          Em Andamento <span class="count-badge">({{ countByStatus('em_andamento') }})</span>
+        </button>
+        <button 
+          class="btn-tab-pill" 
+          :class="{ active: selectedStatus === 'concluida' }"
+          @click="selectedStatus = 'concluida'"
+        >
+          Concluídas <span class="count-badge">({{ countByStatus('concluida') }})</span>
+        </button>
+      </div>
+
+      <!-- Dropdown Selects matching Figma -->
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- Priority Filter -->
+        <div class="dropdown-select-wrap">
+          <select v-model="selectedPriority" class="form-select-pill">
+            <option value="all">Prioridade: Todas</option>
+            <option value="alta">Prioridade: Alta</option>
+            <option value="media">Prioridade: Média</option>
+            <option value="baixa">Prioridade: Baixa</option>
+          </select>
         </div>
 
-        <div class="col-sm-4">
-          <div class="stat-mini-box p-3 rounded-3">
-            <span class="small text-muted fw-bold text-uppercase">Pendências</span>
-            <div class="fs-4 fw-extrabold text-warning mt-1">{{ pendingCount }}</div>
-            <small class="text-muted">A fazer ou em andamento</small>
-          </div>
-        </div>
-
-        <div class="col-sm-4">
-          <div class="stat-mini-box p-3 rounded-3" :class="{ 'border-risk': riskCount > 0 }">
-            <span class="small text-danger fw-bold text-uppercase">Zona de Risco (≤ 3 dias)</span>
-            <div class="fs-4 fw-extrabold text-risk mt-1">{{ riskCount }}</div>
-            <small class="text-muted">Prazos urgentes não concluídos</small>
-          </div>
+        <!-- Category Filter -->
+        <div class="dropdown-select-wrap">
+          <select v-model="selectedCategory" class="form-select-pill">
+            <option value="all">Categoria: Todas</option>
+            <option value="trabalho_avaliativo">Trabalho Avaliativo</option>
+            <option value="prova">Prova</option>
+            <option value="atividade_pontual">Atividade Pontual</option>
+            <option value="revisao">Revisão</option>
+            <option value="seminario">Seminário</option>
+          </select>
         </div>
       </div>
     </div>
 
-    <!-- Section Title & Filters -->
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <div>
-        <h3 class="text-primary mb-0">Atividades e Entregas</h3>
-        <small class="text-muted">Gerencie provas, trabalhos, seminários e revisões</small>
+    <!-- Activities List matching Figma -->
+    <div v-if="filteredActivities.length > 0" class="d-flex flex-column gap-3">
+      <div 
+        v-for="item in filteredActivities" 
+        :key="item.id" 
+        class="activity-card-item p-3.5 p-md-4 d-flex align-items-start gap-3"
+        :class="getCardBorderClass(item)"
+      >
+        <!-- Custom Rounded Checkbox -->
+        <button 
+          class="custom-checkbox-btn mt-1" 
+          :class="{ checked: item.status === 'concluida' }"
+          :title="item.status === 'concluida' ? 'Reabrir atividade' : 'Concluir atividade'"
+          @click="toggleStatus(item)"
+        >
+          <i v-if="item.status === 'concluida'" class="bi bi-check-lg"></i>
+        </button>
+
+        <!-- Content Body -->
+        <div class="min-w-0 flex-grow-1">
+          <!-- Tags Row -->
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <!-- Category Tag (Purple) -->
+            <span class="tag-category-pill">
+              {{ formatCategory(item.category) }}
+            </span>
+
+            <!-- Priority Tag -->
+            <span 
+              class="tag-priority-pill"
+              :class="'tag-priority-' + item.priority"
+            >
+              {{ formatPriority(item.priority) }}
+            </span>
+
+            <!-- Status Tag -->
+            <span 
+              class="tag-status-pill"
+              :class="item.status === 'concluida' ? 'tag-status-concluida' : 'tag-status-neutral'"
+            >
+              {{ formatStatus(item.status) }}
+            </span>
+          </div>
+
+          <!-- Activity Title -->
+          <h3 
+            class="activity-name mb-2"
+            :class="{ 'text-completed': item.status === 'concluida' }"
+          >
+            {{ item.name }}
+          </h3>
+
+          <!-- Prazo info (apenas para atividades não concluídas) -->
+          <div v-if="item.status !== 'concluida'" class="activity-deadline">
+            <span 
+              v-if="isUrgent(item)" 
+              class="badge-urgent-prazo"
+            >
+              <i class="bi bi-clock me-1"></i>
+              Prazo: {{ formatDueDate(item.dueDate) }}
+            </span>
+            <span v-else class="text-muted small">
+              <i class="bi bi-calendar3 me-1"></i>
+              Prazo: {{ formatDueDate(item.dueDate) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Right: Actions (Edit & Delete) -->
+        <div class="d-flex align-items-center gap-1.5 flex-shrink-0 ms-2">
+          <button 
+            class="btn-item-action" 
+            title="Editar atividade"
+            @click="openEditActivityModal(item)"
+          >
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button 
+            class="btn-item-action text-danger" 
+            title="Excluir atividade"
+            @click="handleDeleteActivity(item.id)"
+          >
+            <i class="bi bi-trash3"></i>
+          </button>
+        </div>
       </div>
-      <button class="btn-study-accent d-md-none" @click="openAddActivityModal">
-        <i class="bi bi-plus-lg"></i>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="empty-state-card p-5 text-center">
+      <i class="bi bi-folder-check fs-1 text-primary d-block mb-3"></i>
+      <h5 class="fw-bold mb-1">Nenhuma atividade encontrada</h5>
+      <p class="text-muted mb-4 small">Nenhuma atividade corresponde aos filtros selecionados.</p>
+      <button class="btn-figma-accent px-4" @click="openAddActivityModal">
+        <i class="bi bi-plus-lg me-1"></i>
+        Cadastrar Atividade
       </button>
     </div>
 
-    <!-- TaskFilters.vue (por prioridade, situação, categoria e busca) -->
-    <TaskFilters 
-      v-model="filters" 
-      :total-count="filteredActivities.length" 
-    />
-
-    <!-- TaskList.vue + TaskCard.vue -->
-    <TaskList
-      :activities="filteredActivities"
-      :parent-name="discipline.name"
-      :parent-color="discipline.themeColor"
-      empty-title="Nenhuma atividade encontrada nesta disciplina"
-      empty-description="Clique no botão abaixo para agendar a primeira prova ou trabalho desta matéria."
-      @edit="openEditActivityModal"
-      @delete="handleDeleteActivity"
-      @status-change="handleStatusChange"
-      @add="openAddActivityModal"
-    />
-
-    <!-- Floating Action Button -->
-    <FloatingActionButton 
-      @create-discipline="$router.push('/disciplinas/nova')"
-      @create-activity="openAddActivityModal"
-    />
-
-    <!-- Shared Task Modal -->
+    <!-- Shared Task Modal for Adding/Editing -->
     <TaskFormModal
       :is-open="isTaskModalOpen"
       :activity-to-edit="activityToEdit"
@@ -154,6 +219,18 @@
       :parent-name="discipline.name"
       @close="isTaskModalOpen = false"
       @saved="handleActivitySaved"
+    />
+
+    <!-- Custom Confirmation Alert Modal -->
+    <ConfirmModal
+      :is-open="confirmModalConfig.isOpen"
+      :title="confirmModalConfig.title"
+      :message="confirmModalConfig.message"
+      :confirm-text="confirmModalConfig.confirmText"
+      :cancel-text="confirmModalConfig.cancelText"
+      :type="confirmModalConfig.type"
+      @confirm="onConfirmAction"
+      @close="confirmModalConfig.isOpen = false"
     />
   </div>
 
@@ -167,10 +244,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import TaskFilters from '../components/shared/TaskFilters.vue'
-import TaskList from '../components/shared/TaskList.vue'
 import TaskFormModal from '../components/shared/TaskFormModal.vue'
-import FloatingActionButton from '../components/shared/FloatingActionButton.vue'
+import ConfirmModal from '../components/shared/ConfirmModal.vue'
 import {
   getDisciplineById,
   deleteDiscipline,
@@ -179,7 +254,7 @@ import {
   deleteActivity,
   updateActivityStatus
 } from '../services/storage'
-import { isRiskZone } from '../utils/dateUtils'
+import { parseDate, isRiskZone } from '../utils/dateUtils'
 
 const route = useRoute()
 const router = useRouter()
@@ -187,15 +262,21 @@ const router = useRouter()
 const discipline = ref(null)
 const activities = ref([])
 
+const selectedStatus = ref('all')
+const selectedPriority = ref('all')
+const selectedCategory = ref('all')
+
 const isTaskModalOpen = ref(false)
 const activityToEdit = ref(null)
 
-const filters = ref({
-  search: '',
-  status: 'all',
-  priority: 'all',
-  category: 'all',
-  onlyRisk: false
+const confirmModalConfig = ref({
+  isOpen: false,
+  title: 'Confirmação',
+  message: '',
+  confirmText: 'Sim',
+  cancelText: 'Não',
+  type: 'danger',
+  action: null
 })
 
 function loadData() {
@@ -213,66 +294,82 @@ onMounted(() => {
   loadData()
 })
 
-const completedCount = computed(() => {
-  return activities.value.filter(a => a.status === 'concluida').length
-})
-
-const pendingCount = computed(() => {
-  return activities.value.filter(a => a.status === 'a_fazer' || a.status === 'em_andamento').length
-})
-
-const riskCount = computed(() => {
-  return activities.value.filter(a => isRiskZone(a)).length
-})
-
-const progressPercent = computed(() => {
-  if (activities.value.length === 0) return 0
-  return Math.round((completedCount.value / activities.value.length) * 100)
-})
+function countByStatus(status) {
+  return activities.value.filter(a => a.status === status).length
+}
 
 const filteredActivities = computed(() => {
   let list = [...activities.value]
 
-  // Search filter
-  if (filters.value.search.trim()) {
-    const q = filters.value.search.toLowerCase().trim()
-    list = list.filter(a => 
-      a.name.toLowerCase().includes(q) ||
-      (a.description && a.description.toLowerCase().includes(q))
-    )
+  // Status Filter
+  if (selectedStatus.value !== 'all') {
+    list = list.filter(a => a.status === selectedStatus.value)
   }
 
-  // Status filter
-  if (filters.value.status !== 'all') {
-    list = list.filter(a => a.status === filters.value.status)
+  // Priority Filter
+  if (selectedPriority.value !== 'all') {
+    list = list.filter(a => a.priority === selectedPriority.value)
   }
 
-  // Priority filter
-  if (filters.value.priority !== 'all') {
-    list = list.filter(a => a.priority === filters.value.priority)
+  // Category Filter
+  if (selectedCategory.value !== 'all') {
+    list = list.filter(a => a.category === selectedCategory.value)
   }
-
-  // Category filter
-  if (filters.value.category !== 'all') {
-    list = list.filter(a => a.category === filters.value.category)
-  }
-
-  // Risk zone filter
-  if (filters.value.onlyRisk) {
-    list = list.filter(a => isRiskZone(a))
-  }
-
-  // Sort by date ascending (closest first)
-  list.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
 
   return list
 })
 
-function confirmDelete() {
-  if (confirm(`Deseja realmente excluir a disciplina "${discipline.value.name}" e todas as suas atividades?`)) {
-    deleteDiscipline(discipline.value.id)
-    router.push('/disciplinas')
+function isUrgent(item) {
+  return isRiskZone(item)
+}
+
+function getCardBorderClass(item) {
+  if (item.status === 'concluida') return 'card-border-green'
+  if (item.status === 'em_andamento' || isRiskZone(item)) return 'card-border-orange'
+  if (item.status === 'a_fazer') return 'card-border-purple'
+  return 'card-border-neutral'
+}
+
+function formatCategory(category) {
+  const map = {
+    trabalho_avaliativo: 'Trabalho Avaliativo',
+    prova: 'Prova',
+    atividade_pontual: 'Atividade Pontual',
+    revisao: 'Revisão',
+    seminario: 'Seminário'
   }
+  return map[category] || 'Atividade'
+}
+
+function formatPriority(priority) {
+  if (priority === 'alta') return 'Alta Prioridade'
+  if (priority === 'media') return 'Prioridade Média'
+  if (priority === 'baixa') return 'Prioridade Baixa'
+  return 'Prioridade'
+}
+
+function formatStatus(status) {
+  if (status === 'em_andamento') return 'Em Andamento'
+  if (status === 'concluida') return 'Concluída'
+  return 'A Fazer'
+}
+
+function formatDueDate(dateStr) {
+  if (!dateStr) return 'Sem prazo'
+  const date = parseDate(dateStr)
+  if (!date || isNaN(date.getTime())) return dateStr
+
+  const day = String(date.getDate()).padStart(2, '0')
+  const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+  const monthName = months[date.getMonth()]
+
+  return `${day} de ${monthName}`
+}
+
+function toggleStatus(item) {
+  const nextStatus = item.status === 'concluida' ? 'a_fazer' : 'concluida'
+  updateActivityStatus(item.id, nextStatus)
+  loadData()
 }
 
 function openAddActivityModal() {
@@ -280,8 +377,8 @@ function openAddActivityModal() {
   isTaskModalOpen.value = true
 }
 
-function openEditActivityModal(activity) {
-  activityToEdit.value = activity
+function openEditActivityModal(item) {
+  activityToEdit.value = item
   isTaskModalOpen.value = true
 }
 
@@ -291,79 +388,377 @@ function handleActivitySaved(activityData) {
 }
 
 function handleDeleteActivity(id) {
-  if (confirm('Tem certeza que deseja remover esta atividade?')) {
-    deleteActivity(id)
-    loadData()
+  confirmModalConfig.value = {
+    isOpen: true,
+    title: 'Excluir Atividade',
+    message: 'Tem certeza que deseja remover esta atividade?',
+    confirmText: 'Sim',
+    cancelText: 'Não',
+    type: 'danger',
+    action: () => {
+      deleteActivity(id)
+      loadData()
+    }
   }
 }
 
-function handleStatusChange({ id, status }) {
-  updateActivityStatus(id, status)
-  loadData()
+function confirmDelete() {
+  confirmModalConfig.value = {
+    isOpen: true,
+    title: 'Excluir Disciplina',
+    message: `Deseja realmente excluir a disciplina "${discipline.value.name}" e todas as suas atividades?`,
+    confirmText: 'Sim',
+    cancelText: 'Não',
+    type: 'danger',
+    action: () => {
+      deleteDiscipline(discipline.value.id)
+      router.push('/disciplinas')
+    }
+  }
 }
 
-function getSoftBg(color) {
-  if (color === '#C2D039') return 'rgba(194, 208, 57, 0.16)'
-  if (color === '#A184E5') return 'rgba(161, 132, 229, 0.16)'
-  return 'rgba(245, 244, 227, 0.9)'
+function onConfirmAction() {
+  if (confirmModalConfig.value.action) {
+    confirmModalConfig.value.action()
+  }
 }
 </script>
 
 <style scoped>
-.fw-extrabold {
-  font-weight: 800;
-}
-
-.discipline-header-card {
-  background-color: var(--color-card-bg);
-  border-radius: var(--border-radius-card);
-}
-
-.detail-icon-circle {
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
+/* Breadcrumb */
+.breadcrumb-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 2.2rem;
-  flex-shrink: 0;
-  border: 1px solid var(--color-border);
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
-.discipline-header-title {
-  font-size: 1.8rem;
+.breadcrumb-link {
+  color: #6D48C5;
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+  color: #513490;
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  color: #9CA3AF;
+}
+
+.breadcrumb-current {
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+
+/* Header Card */
+.header-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.discipline-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #363636;
+  letter-spacing: -0.02em;
   line-height: 1.2;
 }
 
-.stat-mini-box {
-  background-color: #fff;
+.discipline-professor {
+  font-size: 0.92rem;
+}
+
+/* Action Buttons */
+.btn-figma-accent {
+  background-color: #C2D039;
+  color: #363636;
+  border: none;
+  font-weight: 700;
+  font-size: 0.88rem;
+  border-radius: var(--border-radius-pill);
+  padding: 0.65rem 1.35rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.2s ease;
+}
+
+.btn-figma-accent:hover {
+  background-color: #AFC026;
+  transform: translateY(-1px);
+}
+
+.btn-figma-outline {
+  background-color: #FFFFFF;
+  color: #363636;
+  border: 1px solid var(--color-border);
+  font-weight: 600;
+  font-size: 0.88rem;
+  border-radius: var(--border-radius-pill);
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.2s ease;
+}
+
+.btn-figma-outline:hover {
+  background-color: #F4F4F5;
+  border-color: #D4D4D8;
+}
+
+.btn-figma-icon-delete {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  color: #71717A;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-figma-icon-delete:hover {
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border-color: #FCA5A5;
+}
+
+/* Filter Tabs */
+.filter-tabs-wrap {
+  background-color: #FFFFFF;
+  border-radius: var(--border-radius-pill);
+  padding: 4px;
   border: 1px solid var(--color-border);
 }
 
-.progress-bar-wrap {
-  height: 8px;
-  background-color: var(--color-border);
-  border-radius: 10px;
-  overflow: hidden;
+.btn-tab-pill {
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-pill);
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-.progress-bar-fill {
-  height: 100%;
-  background-color: var(--color-accent);
-  border-radius: 10px;
-  transition: width 0.4s ease;
+.btn-tab-pill:hover {
+  color: var(--color-text-primary);
 }
 
-.border-top-subtle {
-  border-top: 1px solid var(--color-border-subtle);
+.btn-tab-pill.active {
+  background-color: #6D48C5;
+  color: #FFFFFF;
+  font-weight: 700;
 }
 
-.text-risk {
-  color: var(--color-risk);
+.btn-tab-pill.active .count-badge {
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.max-w-2xl {
-  max-width: 680px;
+.count-badge {
+  font-size: 0.8rem;
+  color: #71717A;
+}
+
+/* Dropdown Pill */
+.dropdown-select-wrap {
+  background-color: #FFFFFF;
+  border-radius: var(--border-radius-pill);
+  border: 1px solid var(--color-border);
+  padding: 2px 8px;
+}
+
+.form-select-pill {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  border: none !important;
+  background-color: transparent !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2352525B' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 11px 7px !important;
+  font-size: 0.84rem !important;
+  font-weight: 600 !important;
+  color: var(--color-text-secondary) !important;
+  padding: 6px 26px 6px 10px !important;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Activity Card Item */
+.activity-card-item {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.activity-card-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.card-border-orange {
+  border-left: 5px solid #F97316;
+}
+
+.card-border-purple {
+  border-left: 5px solid #8366C5;
+}
+
+.card-border-green {
+  border-left: 5px solid #84CC16;
+}
+
+.card-border-neutral {
+  border-left: 5px solid #CBD5E1;
+}
+
+/* Custom Checkbox */
+.custom-checkbox-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 2px solid #D4D4D8;
+  background: #FFFFFF;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.custom-checkbox-btn:hover {
+  border-color: #84CC16;
+}
+
+.custom-checkbox-btn.checked {
+  background-color: #B5D43C;
+  border-color: #B5D43C;
+  color: #FFFFFF;
+}
+
+/* Tags */
+.tag-category-pill {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.22rem 0.75rem;
+  border-radius: var(--border-radius-pill);
+  background-color: #ECE8FA;
+  color: #6D48C5;
+}
+
+.tag-priority-pill {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.22rem 0.75rem;
+  border-radius: var(--border-radius-pill);
+}
+
+.tag-priority-alta {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+.tag-priority-media {
+  background-color: #F4F4F5;
+  color: #52525B;
+}
+
+.tag-priority-baixa {
+  background-color: #F4F4F5;
+  color: #71717A;
+}
+
+.tag-status-pill {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.22rem 0.75rem;
+  border-radius: var(--border-radius-pill);
+}
+
+.tag-status-neutral {
+  background-color: #F4F4F5;
+  color: #52525B;
+}
+
+.tag-status-concluida {
+  background-color: #C2D039;
+  color: #363636;
+}
+
+.activity-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #363636;
+  line-height: 1.3;
+}
+
+.text-completed {
+  text-decoration: line-through;
+  color: #9CA3AF !important;
+}
+
+.badge-urgent-prazo {
+  font-size: 0.78rem;
+  font-weight: 700;
+  background-color: #FEE2E2;
+  color: #EA580C;
+  padding: 0.28rem 0.75rem;
+  border-radius: var(--border-radius-pill);
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-item-action {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-item-action:hover {
+  background-color: #F4F4F5;
+  color: #363636;
+}
+
+.btn-item-action.text-danger:hover {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+.empty-state-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-card);
 }
 </style>

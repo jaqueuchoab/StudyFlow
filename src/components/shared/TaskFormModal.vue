@@ -1,143 +1,201 @@
 <template>
   <div 
     v-if="isOpen" 
-    class="modal-backdrop-custom" 
+    class="modal-backdrop-blur" 
     @click.self="close"
   >
-    <div class="modal-dialog-custom">
-      <div class="modal-content study-card p-4">
-        <!-- Header -->
-        <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom-subtle">
-          <div class="d-flex align-items-center gap-2">
-            <div class="modal-icon-badge">
-              <i class="bi bi-pencil-square"></i>
-            </div>
-            <div>
-              <h5 class="mb-0 text-primary">{{ isEditing ? 'Editar Atividade' : 'Nova Atividade' }}</h5>
-              <small class="text-muted">{{ parentLabel }}</small>
+    <div class="modal-card p-4 p-sm-4.5">
+      <!-- Header with Title, Subtitle & Close button -->
+      <div class="d-flex align-items-start justify-content-between mb-4">
+        <div>
+          <h2 class="modal-title mb-1">
+            {{ isEditing ? 'Editar Atividade' : 'Nova Atividade' }}
+          </h2>
+          <p class="modal-subtitle mb-0">
+            {{ isEditing ? 'Edite as informações e prazos da tarefa selecionada' : 'Adiciona uma tarefa e vincule-a à uma disciplina' }}
+          </p>
+        </div>
+        <button 
+          type="button" 
+          class="btn-close-modal" 
+          title="Fechar"
+          @click="close"
+        >
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <!-- Form Body -->
+      <form @submit.prevent="handleSubmit">
+        <!-- Row 1: Vincular disciplina & Nome da Atividade -->
+        <div class="row g-3 mb-3.5">
+          <!-- Vincular disciplina -->
+          <div class="col-md-6">
+            <label class="form-label-figma">Vincular disciplina</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-journal-bookmark input-icon text-muted"></i>
+              <select 
+                v-model="formData.parentId" 
+                class="form-control-figma form-control-icon"
+                required
+              >
+                <option value="" disabled>Selecione a disciplina...</option>
+                <option v-for="d in disciplinesList" :key="d.id" :value="d.id">
+                  {{ d.name }}
+                </option>
+              </select>
             </div>
           </div>
-          <button type="button" class="btn-close-modal" @click="close">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
 
-        <!-- Form Body -->
-        <form @submit.prevent="handleSubmit">
-          <!-- Nome da atividade -->
-          <div class="mb-3">
-            <label class="form-label">
+          <!-- Nome da Atividade -->
+          <div class="col-md-6">
+            <label class="form-label-figma">
               Nome da Atividade <span class="text-danger">*</span>
             </label>
             <input 
               v-model="formData.name" 
               type="text" 
-              class="form-control" 
-              placeholder="Ex: Trabalho Prático de Escalonamento" 
+              class="form-control-figma" 
+              placeholder="Ex: Implementar Store reativa com Pinia"
               required 
+              autofocus
             />
           </div>
+        </div>
 
-          <!-- Disciplina (se não vier pré-selecionada) -->
-          <div v-if="!fixedParentId" class="mb-3">
-            <label class="form-label">
-              Disciplina Vinculada <span class="text-danger">*</span>
-            </label>
-            <select v-model="formData.parentId" class="form-select" required>
-              <option value="" disabled>Selecione a disciplina...</option>
-              <option v-for="d in disciplinesList" :key="d.id" :value="d.id">
-                {{ d.name }} ({{ d.professor }})
-              </option>
-            </select>
-          </div>
+        <!-- Row 2: Descrição -->
+        <div class="mb-3.5">
+          <label class="form-label-figma">Descrição</label>
+          <textarea 
+            v-model="formData.description" 
+            class="form-control-figma form-textarea-figma" 
+            rows="3" 
+            placeholder="Criar módulo de persistência local para armazenar tarefas dos estudos e vincular ao state global da aplicação."
+          ></textarea>
+        </div>
 
-          <!-- Descrição -->
-          <div class="mb-3">
-            <label class="form-label">Descrição ou Orientações</label>
-            <textarea 
-              v-model="formData.description" 
-              class="form-control" 
-              rows="3" 
-              placeholder="Critérios de avaliação, referências ou detalhes da entrega..."
-            ></textarea>
-          </div>
-
+        <!-- Row 3: Prazo de Entrega & Categoria -->
+        <div class="row g-3 mb-3.5">
           <!-- Prazo de Entrega -->
-          <div class="mb-3">
-            <label class="form-label">
-              <i class="bi bi-calendar-event me-1 text-primary"></i>Prazo de Entrega
-            </label>
-            <input 
-              v-model="formData.dueDate" 
-              type="date" 
-              class="form-control" 
-              required
-            />
+          <div class="col-md-6">
+            <label class="form-label-figma">Prazo de Entrega</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-calendar3 input-icon text-muted"></i>
+              <input 
+                v-model="formData.dueDate" 
+                type="date" 
+                class="form-control-figma form-control-icon" 
+                required 
+              />
+            </div>
           </div>
 
-          <!-- Row: Categoria & Prioridade -->
-          <div class="row g-3 mb-3">
-            <div class="col-md-6">
-              <label class="form-label">Categoria</label>
-              <select v-model="formData.category" class="form-select" required>
-                <option value="prova">Prova</option>
+          <!-- Categoria -->
+          <div class="col-md-6">
+            <label class="form-label-figma">Categoria</label>
+            <div class="input-icon-wrap">
+              <i class="bi bi-layers input-icon text-muted"></i>
+              <select 
+                v-model="formData.category" 
+                class="form-control-figma form-control-icon" 
+                required
+              >
                 <option value="trabalho_avaliativo">Trabalho Avaliativo</option>
+                <option value="prova">Prova</option>
                 <option value="seminario">Seminário</option>
                 <option value="atividade_pontual">Atividade Pontual</option>
                 <option value="revisao">Revisão</option>
               </select>
             </div>
+          </div>
+        </div>
 
-            <div class="col-md-6">
-              <label class="form-label">Prioridade</label>
-              <select v-model="formData.priority" class="form-select" required>
-                <option value="baixa">Baixa</option>
-                <option value="media">Média</option>
-                <option value="alta">Alta (Crítica)</option>
-              </select>
+        <!-- Row 4: Prioridade & Status Inicial -->
+        <div class="row g-3 mb-4">
+          <!-- Prioridade -->
+          <div class="col-md-6">
+            <label class="form-label-figma">Prioridade</label>
+            <div class="segmented-control d-flex p-1">
+              <button 
+                type="button" 
+                class="btn-segment flex-grow-1" 
+                :class="{ active: formData.priority === 'baixa' }"
+                @click="formData.priority = 'baixa'"
+              >
+                Baixa
+              </button>
+              <button 
+                type="button" 
+                class="btn-segment flex-grow-1" 
+                :class="{ active: formData.priority === 'media' }"
+                @click="formData.priority = 'media'"
+              >
+                Média
+              </button>
+              <button 
+                type="button" 
+                class="btn-segment flex-grow-1 btn-priority-alta" 
+                :class="{ active: formData.priority === 'alta' }"
+                @click="formData.priority = 'alta'"
+              >
+                Alta
+              </button>
             </div>
           </div>
 
-          <!-- Status -->
-          <div class="mb-4">
-            <label class="form-label">Situação Inicial</label>
-            <div class="status-radio-group d-flex gap-2">
-              <label 
-                class="status-radio-btn" 
+          <!-- Status Inicial -->
+          <div class="col-md-6">
+            <label class="form-label-figma">
+              {{ isEditing ? 'Status' : 'Status Inicial' }}
+            </label>
+            <div class="segmented-control d-flex p-1">
+              <button 
+                type="button" 
+                class="btn-segment flex-grow-1" 
                 :class="{ active: formData.status === 'a_fazer' }"
+                @click="formData.status = 'a_fazer'"
               >
-                <input type="radio" v-model="formData.status" value="a_fazer" class="d-none">
-                <span>A Fazer</span>
-              </label>
-              <label 
-                class="status-radio-btn" 
+                A fazer
+              </button>
+              <button 
+                type="button" 
+                class="btn-segment flex-grow-1" 
                 :class="{ active: formData.status === 'em_andamento' }"
+                @click="formData.status = 'em_andamento'"
               >
-                <input type="radio" v-model="formData.status" value="em_andamento" class="d-none">
-                <span>Em Andamento</span>
-              </label>
-              <label 
-                class="status-radio-btn" 
+                Em andamento
+              </button>
+              <button 
+                type="button" 
+                class="btn-segment flex-grow-1" 
                 :class="{ active: formData.status === 'concluida' }"
+                @click="formData.status = 'concluida'"
               >
-                <input type="radio" v-model="formData.status" value="concluida" class="d-none">
-                <span>Concluída</span>
-              </label>
+                Concluída
+              </button>
             </div>
           </div>
+        </div>
 
-          <!-- Actions -->
-          <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top-subtle">
-            <button type="button" class="btn-study-outline py-2 px-3" @click="close">
-              Cancelar
-            </button>
-            <button type="submit" class="btn-study-accent py-2 px-4">
-              <i class="bi bi-check2-circle"></i>
-              <span>{{ isEditing ? 'Salvar Alterações' : 'Criar Atividade' }}</span>
-            </button>
-          </div>
-        </form>
-      </div>
+        <!-- Footer Actions matching Figma -->
+        <div class="d-flex align-items-center justify-content-end gap-3 pt-2">
+          <button 
+            type="button" 
+            class="btn-cancel" 
+            @click="close"
+          >
+            Cancelar
+          </button>
+          
+          <button 
+            type="submit" 
+            class="btn-figma-save"
+          >
+            <i class="bi bi-check-lg me-1"></i>
+            <span>{{ isEditing ? 'Salvar Alterações' : 'Salvar Atividade' }}</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
@@ -171,9 +229,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'saved'])
 
-const fixedParentId = computed(() => Boolean(props.parentId))
 const isEditing = computed(() => Boolean(props.activityToEdit && props.activityToEdit.id))
-
 const disciplinesList = ref([])
 
 const formData = ref({
@@ -182,15 +238,10 @@ const formData = ref({
   description: '',
   dueDate: new Date().toISOString().split('T')[0],
   category: 'trabalho_avaliativo',
-  priority: 'media',
-  status: 'a_fazer',
+  priority: 'alta',
+  status: 'em_andamento',
   parentType: 'discipline',
   parentId: ''
-})
-
-const parentLabel = computed(() => {
-  if (props.parentName) return `Vinculada a: ${props.parentName}`
-  return 'Preencha os detalhes da atividade'
 })
 
 watch(() => props.isOpen, (newVal) => {
@@ -203,15 +254,15 @@ watch(() => props.isOpen, (newVal) => {
         dueDate: props.activityToEdit.dueDate || new Date().toISOString().split('T')[0]
       }
     } else {
-      // Default reset
+      // Default reset for new activity
       formData.value = {
         id: '',
         name: '',
         description: '',
         dueDate: new Date().toISOString().split('T')[0],
         category: 'trabalho_avaliativo',
-        priority: 'media',
-        status: 'a_fazer',
+        priority: 'alta',
+        status: 'em_andamento',
         parentType: props.parentType || 'discipline',
         parentId: props.parentId || (disciplinesList.value[0]?.id || '')
       }
@@ -230,105 +281,229 @@ function handleSubmit() {
   emit('saved', {
     ...formData.value,
     parentType: props.parentType || 'discipline',
-    parentId: props.parentId || formData.value.parentId
+    parentId: formData.value.parentId || props.parentId
   })
   close()
 }
 </script>
 
 <style scoped>
-.modal-backdrop-custom {
+/* Backdrop Overlay with Blur matching Figma */
+.modal-backdrop-blur {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(46, 42, 39, 0.45);
-  backdrop-filter: blur(4px);
+  background-color: rgba(46, 42, 39, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1050;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1050;
   padding: 1.5rem;
+  animation: backdropFade 0.2s ease;
 }
 
-.modal-dialog-custom {
+@keyframes backdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal Card */
+.modal-card {
   width: 100%;
-  max-width: 540px;
-  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 680px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-@keyframes modalFadeIn {
+@keyframes modalScaleUp {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: scale(0.94) translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
-.modal-icon-badge {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
+.modal-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.modal-subtitle {
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
 }
 
 .btn-close-modal {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: transparent;
   border: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
+  background: transparent;
+  color: #71717A;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
 }
 
 .btn-close-modal:hover {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
+  background-color: #F4F4F5;
+  color: #363636;
 }
 
-.status-radio-group {
-  display: flex;
-  width: 100%;
-}
-
-.status-radio-btn {
-  flex: 1;
-  text-align: center;
-  padding: 0.55rem 0.6rem;
-  background: #fff;
-  border: 1.5px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  font-size: 0.82rem;
+.form-label-figma {
+  display: block;
+  font-size: 0.86rem;
   font-weight: 600;
-  cursor: pointer;
   color: var(--color-text-secondary);
-  transition: all 0.2s;
+  margin-bottom: 0.4rem;
 }
 
-.status-radio-btn.active {
-  border-color: var(--color-primary);
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
+.input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.border-bottom-subtle {
-  border-bottom: 1px solid var(--color-border-subtle);
+.input-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 0.95rem;
+  pointer-events: none;
 }
-.border-top-subtle {
-  border-top: 1px solid var(--color-border-subtle);
+
+.form-control-figma {
+  width: 100%;
+  background-color: #FAF8F2;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.72rem 1rem;
+  font-size: 0.92rem;
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control-icon {
+  padding-left: 38px !important;
+}
+
+select.form-control-figma {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2352525B' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px 8px;
+  padding-right: 38px !important;
+  cursor: pointer;
+}
+
+.form-textarea-figma {
+  resize: vertical;
+  min-height: 85px;
+}
+
+.form-control-figma:focus {
+  background-color: #FFFFFF;
+  border-color: #8366C5;
+  box-shadow: 0 0 0 3px rgba(131, 102, 197, 0.15);
+}
+
+.form-control-figma::placeholder {
+  color: #A1A1AA;
+}
+
+/* Segmented Control matching Figma */
+.segmented-control {
+  background-color: #FAF8F2;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-pill);
+  gap: 3px;
+}
+
+.btn-segment {
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-pill);
+  padding: 6px 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.btn-segment:hover {
+  color: var(--color-text-primary);
+}
+
+.btn-segment.active {
+  background-color: #6D48C5;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-priority-alta.active {
+  background-color: #FFFFFF;
+  color: #DC2626;
+  border: 1.5px solid #F87171;
+}
+
+/* Action Buttons */
+.btn-cancel {
+  background: transparent;
+  border: none;
+  color: #52525B;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  cursor: pointer;
+  border-radius: var(--border-radius-pill);
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background-color: #F4F4F5;
+  color: #363636;
+}
+
+.btn-figma-save {
+  background-color: #C2D039;
+  color: #363636;
+  border: none;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 0.65rem 1.45rem;
+  border-radius: var(--border-radius-pill);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.btn-figma-save:hover {
+  background-color: #AFC026;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(194, 208, 57, 0.35);
 }
 </style>

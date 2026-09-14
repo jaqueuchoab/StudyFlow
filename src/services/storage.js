@@ -1,6 +1,6 @@
 /**
  * LocalStorage Service for StudyFlow
- * Implements CRUD for Disciplines and Activities with initial seed data
+ * Implements CRUD for Disciplines and Activities with initial seed data matching Figma prototype
  */
 import { isRiskZone, calculatePriorityScore, getDaysRemaining } from '../utils/dateUtils'
 
@@ -8,10 +8,10 @@ const STORAGE_KEYS = {
   DISCIPLINES: 'studyflow:disciplines',
   PARALLEL_STUDIES: 'studyflow:parallelStudies',
   ACTIVITIES: 'studyflow:activities',
-  INITIALIZED: 'studyflow:initialized_v1'
+  INITIALIZED: 'studyflow:initialized_v4'
 }
 
-// Initial realistic seed data matching the Graphic Garden and eCoursie visual themes
+// Initial realistic seed data matching Figma prototype
 function getInitialSeedData() {
   const today = new Date()
   const formatDate = (daysOffset) => {
@@ -22,111 +22,172 @@ function getInitialSeedData() {
 
   const disciplines = [
     {
-      id: 'disc-so-01',
-      name: 'Sistemas Operacionais',
-      professor: 'Prof. Mark Lee',
+      id: 'disc-calc',
+      name: 'Cálculo Numérico',
+      professor: 'Prof. Dr. Ricardo Santos',
       course: 'Ciência da Computação',
-      workload: 60,
-      description: 'Estudo dos conceitos fundamentais de abstração de SO, gerenciamento de processos, memória virtual e concorrência.',
-      themeColor: '#A184E5',
+      workload: 72,
+      description: 'Métodos numéricos para resolução de equações, interpolação, integração e diferenciação numérica.',
+      themeColor: '#8366C5',
       illustration: 'desktop',
       createdAt: new Date().toISOString()
     },
     {
-      id: 'disc-ia-02',
-      name: 'Inteligência Artificial',
-      professor: 'Prof. Jung Jaehyun',
-      course: 'Engenharia de Software',
+      id: 'disc-eda',
+      name: 'Estruturas de Dados Avançadas',
+      professor: 'Profa. Mariana Lima',
+      course: 'Ciência da Computação',
       workload: 80,
-      description: 'Conceitos de aprendizado de máquina, busca heurística, redes neurais e agentes autônomos.',
+      description: 'Árvores balanceadas, grafos, heaps, tabelas hash otimizadas e algoritmos de fluxo em rede.',
+      themeColor: '#8366C5',
+      illustration: 'code-square',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'disc-as',
+      name: 'Arquitetura de Software',
+      professor: 'Prof. Carlos Eduardo',
+      course: 'Engenharia de Software',
+      workload: 60,
+      description: 'Estilos arquiteturais, microserviços, Clean Architecture, mensageria e resiliência.',
+      themeColor: '#8366C5',
+      illustration: 'cpu',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'disc-ia',
+      name: 'Inteligência Artificial',
+      professor: 'Profa. Beatriz Mendes',
+      course: 'Ciência da Computação',
+      workload: 72,
+      description: 'Busca heurística, redes neurais profundas, aprendizado por reforço e visão computacional.',
       themeColor: '#C2D039',
       illustration: 'cpu',
       createdAt: new Date().toISOString()
     },
     {
-      id: 'disc-es-03',
-      name: 'Engenharia de Software',
-      professor: 'Prof. Kim Taeyong',
-      course: 'Sistemas de Informação',
+      id: 'disc-rc',
+      name: 'Redes de Computadores',
+      professor: 'Prof. Roberto Alencar',
+      course: 'Ciência da Computação',
       workload: 60,
-      description: 'Metodologias ágeis, Clean Architecture, Design Patterns e boas práticas de entrega contínua.',
-      themeColor: '#F5F4E3',
-      illustration: 'code-square',
+      description: 'Camadas OSI/TCP-IP, roteamento, protocolos de transporte, segurança e sockets.',
+      themeColor: '#8366C5',
+      illustration: 'desktop',
       createdAt: new Date().toISOString()
     }
   ]
 
   const activities = [
+    // Cálculo Numérico (matching Figma detail screen)
     {
-      id: 'act-1',
-      name: 'Trabalho Prático: Escalonador de Processos Round-Robin',
-      description: 'Implementação de simulador em C/Java para escalonamento com troca de contexto e cálculo de turnaround.',
-      dueDate: formatDate(2), // Zona de risco! (<= 3 dias)
+      id: 'act-calc-1',
+      name: 'Trabalho Avaliativo: Método de Newton–Raphson',
+      description: 'Implementação computacional do método iterativo com estimativa de erro relativo e taxa de convergência.',
+      dueDate: formatDate(2),
       category: 'trabalho_avaliativo',
       priority: 'alta',
       status: 'em_andamento',
       parentType: 'discipline',
-      parentId: 'disc-so-01',
+      parentId: 'disc-calc',
       createdAt: new Date().toISOString()
     },
     {
-      id: 'act-2',
-      name: 'Seminário: Sistemas de Arquivos Modernos e Journaling',
-      description: 'Apresentação em equipe de 20 minutos abordando ZFS, ext4 e Btrfs.',
+      id: 'act-calc-2',
+      name: 'Prova P2: Interpolação Polinomial',
+      description: 'Avaliação presencial abordando polinômios de Lagrange, Newton e Splines cúbicos.',
       dueDate: formatDate(6),
-      category: 'seminario',
-      priority: 'media',
-      status: 'a_fazer',
-      parentType: 'discipline',
-      parentId: 'disc-so-01',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'act-3',
-      name: 'Prova Regimental: P1 de Inteligência Artificial',
-      description: 'Avaliação presencial contendo algoritmos A*, Minimax e conceitos de aprendizado supervisionado.',
-      dueDate: formatDate(1), // Zona de risco iminente! (amanhã)
       category: 'prova',
       priority: 'alta',
       status: 'a_fazer',
       parentType: 'discipline',
-      parentId: 'disc-ia-02',
+      parentId: 'disc-calc',
       createdAt: new Date().toISOString()
     },
     {
-      id: 'act-4',
-      name: 'Atividade Prática: Classificador com Scikit-Learn',
-      description: 'Notebook Jupyter com pré-processamento, métricas de acurácia, F1-Score e matriz de confusão.',
-      dueDate: formatDate(8),
+      id: 'act-calc-3',
+      name: 'Lista 3 de Exercícios',
+      description: 'Resolução dos exercícios de eliminação de Gauss e fatoração LU com pivotamento parcial.',
+      dueDate: formatDate(-3),
       category: 'atividade_pontual',
       priority: 'media',
       status: 'concluida',
+      completedAt: '10 de Outubro',
       parentType: 'discipline',
-      parentId: 'disc-ia-02',
+      parentId: 'disc-calc',
       createdAt: new Date().toISOString()
     },
     {
-      id: 'act-5',
-      name: 'Revisão e Diagramação: Diagrama de Classes UML',
-      description: 'Refatoração dos modelos de domínio para entrega da sprint 2.',
-      dueDate: formatDate(3), // Zona de risco!
+      id: 'act-calc-4',
+      name: 'Revisão para Exame Final',
+      description: 'Resolução das provas anteriores e revisão geral de quadratura gaussiana.',
+      dueDate: formatDate(20),
       category: 'revisao',
       priority: 'baixa',
-      status: 'em_andamento',
+      status: 'a_fazer',
       parentType: 'discipline',
-      parentId: 'disc-es-03',
+      parentId: 'disc-calc',
+      createdAt: new Date().toISOString()
+    },
+    // Other disciplines
+    {
+      id: 'act-1',
+      name: 'Seminário de IA & Redes Neurais',
+      description: 'Slides sobre algoritmos de busca heurística A* e preparação da apresentação em equipe.',
+      dueDate: formatDate(1),
+      category: 'seminario',
+      priority: 'alta',
+      status: 'a_fazer',
+      parentType: 'discipline',
+      parentId: 'disc-ia',
       createdAt: new Date().toISOString()
     },
     {
-      id: 'act-6',
-      name: 'Trabalho de Especificação: Histórias de Usuário & MVP',
-      description: 'Definição de critérios de aceite e mapa de personas.',
-      dueDate: formatDate(-1), // Atrasada para teste de alerta
+      id: 'act-2',
+      name: 'Trabalho Prático de Compiladores',
+      description: 'Implementação do analisador sintático preditivo tabular com tratamento recursivo.',
+      dueDate: formatDate(2),
+      category: 'trabalho_avaliativo',
+      priority: 'alta',
+      status: 'em_andamento',
+      parentType: 'discipline',
+      parentId: 'disc-eda',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'act-3',
+      name: 'Implementação de Algoritmo de Consenso Raft',
+      description: 'Implementação de eleição de líder e replicação de log distribuído.',
+      dueDate: formatDate(5),
       category: 'trabalho_avaliativo',
       priority: 'alta',
       status: 'a_fazer',
       parentType: 'discipline',
-      parentId: 'disc-es-03',
+      parentId: 'disc-as',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'act-4',
+      name: 'Otimização de Índices e B-Trees em PostgreSQL',
+      description: 'Análise de performance com EXPLAIN ANALYZE e criação de índices parciais.',
+      dueDate: formatDate(7),
+      category: 'atividade_pontual',
+      priority: 'alta',
+      status: 'a_fazer',
+      parentType: 'discipline',
+      parentId: 'disc-rc',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'act-5',
+      name: 'Diagramação de Casos de Uso & Arquitetura C4',
+      description: 'Elaboração dos diagramas de contexto, contêiner e componentes da aplicação.',
+      dueDate: formatDate(12),
+      category: 'revisao',
+      priority: 'media',
+      status: 'a_fazer',
+      parentType: 'discipline',
+      parentId: 'disc-as',
       createdAt: new Date().toISOString()
     }
   ]
@@ -244,6 +305,9 @@ export function updateActivityStatus(id, newStatus) {
   const target = activities.find(a => a.id === id)
   if (target) {
     target.status = newStatus
+    if (newStatus === 'concluida') {
+      target.completedAt = 'hoje às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    }
     localStorage.setItem(STORAGE_KEYS.ACTIVITIES, JSON.stringify(activities))
   }
 }
@@ -281,8 +345,12 @@ export function getDisciplinesWithMetrics() {
   const activities = getActivities()
 
   return disciplines.map(disc => {
-    const discActivities = activities.filter(a => a.parentType === 'discipline' && a.parentId === disc.id)
-    const pending = discActivities.filter(a => a.status === 'a_fazer' || a.status === 'em_andamento').length
+    const discActivities = activities.filter(a => {
+      if (a.parentId && String(a.parentId) === String(disc.id)) return true
+      if (a.parentName && disc.name && a.parentName.trim().toLowerCase() === disc.name.trim().toLowerCase()) return true
+      return false
+    })
+    const pending = discActivities.filter(a => a.status !== 'concluida').length
     const completed = discActivities.filter(a => a.status === 'concluida').length
 
     return {
@@ -307,7 +375,7 @@ export function getPriorityBoardActivities() {
     return {
       ...act,
       parentName: parent ? parent.name : 'Outro',
-      parentColor: parent?.themeColor || '#A184E5',
+      parentColor: parent?.themeColor || '#8366C5',
       score: calculatePriorityScore(act)
     }
   })
@@ -329,7 +397,7 @@ export function getUrgentActivities(limit = 6) {
     return {
       ...act,
       parentName: parent ? parent.name : 'Disciplina',
-      parentColor: parent?.themeColor || '#A184E5'
+      parentColor: parent?.themeColor || '#8366C5'
     }
   })
 

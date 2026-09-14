@@ -1,116 +1,165 @@
 <template>
-  <div class="study-card priority-board p-4 h-100">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom-subtle">
-      <div class="d-flex align-items-center gap-2">
-        <div class="priority-header-icon">
-          <i class="bi bi-lightning-charge-fill"></i>
-        </div>
-        <div>
-          <h4 class="mb-0 text-primary">Quadro de Prioridades</h4>
-          <small class="text-muted">Cruzamento inteligente de prazo iminente e prioridade de entrega</small>
-        </div>
+  <div class="priority-board-section">
+    <!-- Header matching Figma -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+      <div>
+        <h3 class="section-title mb-1">Quadro de Prioridades</h3>
+        <p class="section-subtitle mb-0">Ordenação inteligente baseada em urgência e prazo.</p>
       </div>
-      <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-bold">
-        Top {{ displayedActivities.length }} urgentes
-      </span>
+
+      <!-- Filter Pills matching Figma: Todas, Alta, Média, Baixa -->
+      <div class="filter-pills-wrap d-flex align-items-center gap-1">
+        <button 
+          v-for="filter in filterOptions" 
+          :key="filter.value"
+          class="btn-filter-pill"
+          :class="{ active: selectedFilter === filter.value }"
+          @click="selectedFilter = filter.value"
+        >
+          {{ filter.label }}
+        </button>
+      </div>
     </div>
 
-    <div v-if="displayedActivities.length > 0" class="priority-list">
+    <!-- Priority Cards List matching Figma -->
+    <div v-if="filteredActivities.length > 0" class="d-flex flex-column gap-3">
       <div 
-        v-for="(item, index) in displayedActivities" 
+        v-for="item in filteredActivities" 
         :key="item.id" 
-        class="priority-item d-flex align-items-center justify-content-between p-3 mb-2"
-        :class="{ 'item-risk': isRisk(item), 'item-done': item.status === 'concluida' }"
+        class="priority-card-item p-3 p-sm-3.5 d-flex align-items-center gap-3"
+        :class="{ 'is-completed': item.status === 'concluida' }"
       >
-        <!-- Left: Rank index + Title & Details -->
-        <div class="d-flex align-items-center gap-3 min-w-0 flex-grow-1">
-          <div class="rank-badge" :class="'rank-' + (index + 1)">
-            #{{ index + 1 }}
+        <!-- Custom Rounded Checkbox -->
+        <button 
+          class="custom-checkbox-btn"
+          :class="{ checked: item.status === 'concluida' }"
+          :title="item.status === 'concluida' ? 'Reabrir atividade' : 'Marcar como concluída'"
+          @click="toggleStatus(item)"
+        >
+          <i v-if="item.status === 'concluida'" class="bi bi-check-lg"></i>
+        </button>
+
+        <!-- Content Body -->
+        <div class="min-w-0 flex-grow-1">
+          <!-- Tags Row: Discipline + Priority/Status -->
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <!-- Discipline Tag (only shown if not completed or as secondary) -->
+            <span 
+              v-if="item.status !== 'concluida'"
+              class="tag-discipline"
+              :class="getDisciplineTagClass(item)"
+              :style="getCustomDisciplineStyle(item)"
+            >
+              {{ item.parentName }}
+            </span>
+
+            <!-- Status / Priority Tag -->
+            <span 
+              v-if="item.status === 'concluida'"
+              class="tag-status tag-completed"
+            >
+              Concluído
+            </span>
+            <span 
+              v-else
+              class="tag-status"
+              :class="'tag-priority-' + item.priority"
+            >
+              {{ getPriorityLabel(item.priority) }}
+            </span>
           </div>
 
-          <div class="min-w-0 flex-grow-1">
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
-              <span class="badge-parent-pill" :style="{ borderColor: item.parentColor, color: item.parentColor }">
-                {{ item.parentName }}
-              </span>
-              <CategoryBadge :category="item.category" />
-              <span :class="['badge-priority-sm', 'priority-' + item.priority]">
-                {{ item.priority.toUpperCase() }}
-              </span>
-            </div>
-            <div class="priority-title text-truncate fw-bold" :class="{ 'text-decoration-line-through text-muted': item.status === 'concluida' }">
-              {{ item.name }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Due date & status action -->
-        <div class="d-flex align-items-center gap-3 ms-3 flex-shrink-0">
-          <div class="text-end d-none d-sm-block">
-            <div v-if="isRisk(item)" class="badge-risk">
-              <i class="bi bi-alarm me-1"></i>
-              {{ formatDue(item) }}
-            </div>
-            <div v-else class="text-muted small fw-semibold">
-              <i class="bi bi-calendar3 me-1"></i>
-              {{ formatDate(item.dueDate) }}
-            </div>
-          </div>
-
-          <!-- Fast status toggle -->
-          <button 
-            class="btn-fast-check" 
-            :class="{ active: item.status === 'concluida' }" 
-            :title="item.status === 'concluida' ? 'Reabrir' : 'Concluir atividade'"
-            @click="toggleStatus(item)"
+          <!-- Activity Title -->
+          <h4 
+            class="activity-title mb-1 text-truncate"
+            :class="{ 'completed-text': item.status === 'concluida' }"
+            :title="item.name"
           >
-            <i :class="item.status === 'concluida' ? 'bi bi-check2' : 'bi bi-circle'"></i>
-          </button>
+            {{ item.name }}
+          </h4>
+
+          <!-- Subtitle: Prazo info (apenas para não concluídas) -->
+          <div v-if="item.status !== 'concluida'" class="activity-subtitle d-flex align-items-center text-muted small">
+            <i class="bi bi-calendar3 icon-calendar me-2"></i>
+            <span>Prazo: {{ formatPrazo(item.dueDate) }}</span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Empty State -->
-    <div v-else class="text-center py-4 text-muted">
-      <i class="bi bi-emoji-smile fs-2 text-primary d-block mb-2"></i>
-      <p class="mb-0">Tudo em dia! Nenhuma atividade pendente no momento.</p>
+    <div v-else class="priority-card-item p-4 text-center text-muted">
+      <i class="bi bi-check2-circle text-primary fs-2 mb-2 d-block"></i>
+      <h6 class="fw-bold mb-1 text-dark">Nenhuma atividade nesta categoria!</h6>
+      <p class="small mb-0">Todas as atividades deste filtro foram concluídas ou não foram criadas ainda.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import CategoryBadge from '../ui/CategoryBadge.vue'
-import { formatDate, getDaysRemaining, isRiskZone, isOverdue } from '../../utils/dateUtils'
+import { ref, computed } from 'vue'
+import { parseDate } from '../../utils/dateUtils'
 
 const props = defineProps({
   activities: {
     type: Array,
     default: () => []
-  },
-  limit: {
-    type: Number,
-    default: 5
   }
 })
 
 const emit = defineEmits(['status-change'])
 
-const displayedActivities = computed(() => {
-  // Show pending first, then top N
-  return props.activities.slice(0, props.limit)
+const selectedFilter = ref('todas')
+
+const filterOptions = [
+  { label: 'Todas', value: 'todas' },
+  { label: 'Alta', value: 'alta' },
+  { label: 'Média', value: 'media' },
+  { label: 'Baixa', value: 'baixa' }
+]
+
+const filteredActivities = computed(() => {
+  if (selectedFilter.value === 'todas') {
+    return props.activities
+  }
+  return props.activities.filter(a => a.priority === selectedFilter.value)
 })
 
-function isRisk(item) {
-  return isRiskZone(item)
+function getPriorityLabel(priority) {
+  if (priority === 'alta') return 'Alta Prioridade'
+  if (priority === 'media') return 'Média Prioridade'
+  if (priority === 'baixa') return 'Baixa Prioridade'
+  return 'Prioridade'
 }
 
-function formatDue(item) {
-  if (isOverdue(item)) return 'Atrasada!'
-  const days = getDaysRemaining(item.dueDate)
-  if (days === 0) return 'Hoje!'
-  if (days === 1) return 'Amanhã!'
-  return `${days} dias`
+function getDisciplineTagClass(item) {
+  const name = (item.parentName || '').toLowerCase()
+  if (name.includes('banco') || name.includes('ia') || name.includes('inteligência')) {
+    return 'tag-lime'
+  }
+  return 'tag-purple'
+}
+
+function getCustomDisciplineStyle(item) {
+  if (item.parentColor && item.parentColor !== '#A184E5' && item.parentColor !== '#8366C5') {
+    return {
+      backgroundColor: `${item.parentColor}18`,
+      color: item.parentColor
+    }
+  }
+  return {}
+}
+
+function formatPrazo(dateStr) {
+  if (!dateStr) return 'Sem prazo definido'
+  const date = parseDate(dateStr)
+  if (!date || isNaN(date.getTime())) return dateStr
+
+  const day = String(date.getDate()).padStart(2, '0')
+  const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+  const monthName = months[date.getMonth()]
+
+  return `${day} de ${monthName}`
 }
 
 function toggleStatus(item) {
@@ -120,130 +169,152 @@ function toggleStatus(item) {
 </script>
 
 <style scoped>
-.priority-header-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background-color: var(--color-accent);
-  color: var(--color-text-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
+.priority-board-section {
+  width: 100%;
 }
 
-.priority-item {
-  background: #fff;
+.section-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle {
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+}
+
+.filter-pills-wrap {
+  background: #FFFFFF;
+  border-radius: var(--border-radius-pill);
+  padding: 4px;
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-sm);
-  transition: all 0.2s ease;
 }
 
-.priority-item:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
-  transform: translateX(2px);
-}
-
-.priority-item.item-risk {
-  border-left: 4px solid var(--color-risk);
-  background: linear-gradient(90deg, rgba(224, 109, 83, 0.04) 0%, #fff 30%);
-}
-
-.priority-item.item-done {
-  opacity: 0.65;
-  border-left: 4px solid var(--color-accent);
-}
-
-.rank-badge {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.82rem;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-
-.rank-1 {
-  background-color: #FEEEEE;
-  color: #EF4444;
-}
-
-.rank-2 {
-  background-color: #FEF9EB;
-  color: #D97706;
-}
-
-.rank-3 {
-  background-color: var(--color-accent-light);
-  color: #55600c;
-}
-
-.priority-title {
-  font-size: 0.95rem;
-  color: var(--color-text-primary);
-}
-
-.badge-parent-pill {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.2rem 0.6rem;
+.btn-filter-pill {
+  background: transparent;
+  border: none;
   border-radius: var(--border-radius-pill);
-  border: 1px solid;
-  background-color: #fff;
-}
-
-.badge-priority-sm {
-  font-size: 0.7rem;
-  font-weight: 800;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--border-radius-pill);
-}
-
-.priority-alta {
-  background-color: #FEEEEE;
-  color: #EF4444;
-}
-.priority-media {
-  background-color: #FEF9EB;
-  color: #D97706;
-}
-.priority-baixa {
-  background-color: rgba(81, 52, 144, 0.1);
-  color: #513490;
-}
-
-.btn-fast-check {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 2px solid var(--color-border);
-  background: #fff;
-  color: var(--color-text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 5px 16px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-fast-check:hover {
-  border-color: var(--color-accent);
-  color: var(--color-accent-dark);
-}
-
-.btn-fast-check.active {
-  background-color: var(--color-accent);
-  border-color: var(--color-accent);
+.btn-filter-pill:hover {
   color: var(--color-text-primary);
 }
 
-.border-bottom-subtle {
-  border-bottom: 1px solid var(--color-border-subtle);
+.btn-filter-pill.active {
+  background-color: #6D48C5;
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.priority-card-item {
+  background: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.priority-card-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.custom-checkbox-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 2px solid #D4D4D8;
+  background: #FFFFFF;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.custom-checkbox-btn:hover {
+  border-color: #84CC16;
+}
+
+.custom-checkbox-btn.checked {
+  background-color: #B5D43C;
+  border-color: #B5D43C;
+  color: #FFFFFF;
+}
+
+.tag-discipline {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.22rem 0.75rem;
+  border-radius: var(--border-radius-pill);
+}
+
+.tag-purple {
+  background-color: #ECE8FA;
+  color: #6D48C5;
+}
+
+.tag-lime {
+  background-color: #EBF3CE;
+  color: #55600c;
+}
+
+.tag-status {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.22rem 0.75rem;
+  border-radius: var(--border-radius-pill);
+}
+
+.tag-priority-alta {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+.tag-priority-media {
+  background-color: #FEF3C7;
+  color: #D97706;
+}
+
+.tag-priority-baixa {
+  background-color: #ECE8FA;
+  color: #6D48C5;
+}
+
+.tag-completed {
+  background-color: #EBF3CE;
+  color: #55600c;
+}
+
+.activity-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.35;
+}
+
+.completed-text {
+  text-decoration: line-through;
+  color: #9CA3AF !important;
+}
+
+.activity-subtitle {
+  font-size: 0.84rem;
+  color: var(--color-text-muted);
+}
+
+.icon-calendar {
+  font-size: 0.86rem;
 }
 </style>
