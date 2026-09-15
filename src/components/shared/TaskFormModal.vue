@@ -90,19 +90,19 @@
           <!-- Prazo de Entrega -->
           <div class="col-md-6">
             <label class="form-label-figma">Prazo de Entrega</label>
-            <div class="input-icon-wrap">
-              <i class="bi bi-calendar3 input-icon text-muted"></i>
-              <div 
-                v-if="isReadOnlyMode" 
-                class="form-control-figma form-control-icon readonly-field d-flex align-items-center"
-              >
-                <span>{{ formattedDueDateDisplay }}</span>
+            <div 
+              class="form-control-figma custom-date-group d-flex align-items-center"
+              :class="{ 'readonly-field': isReadOnlyMode }"
+            >
+              <i class="bi bi-calendar3 date-prefix-icon text-muted me-2.5"></i>
+              <div v-if="isReadOnlyMode" class="date-readonly-text flex-grow-1">
+                {{ formattedDueDateDisplay }}
               </div>
               <input 
                 v-else
                 v-model="formData.dueDate" 
                 type="date" 
-                class="form-control-figma form-control-icon form-date-input" 
+                class="date-input-field flex-grow-1" 
                 required 
               />
             </div>
@@ -518,18 +518,57 @@ function handleSubmit() {
   user-select: text;
 }
 
-.form-date-input {
-  min-height: 44px;
-  padding-left: 38px !important;
+.custom-date-group {
+  display: flex;
+  align-items: center;
+  padding: 0 0.85rem;
+  min-height: 46px;
+  cursor: pointer;
 }
 
-.form-date-input::-webkit-date-and-time-value {
+.custom-date-group:focus-within {
+  background-color: #FFFFFF;
+  border-color: #8366C5;
+  box-shadow: 0 0 0 3px rgba(131, 102, 197, 0.15);
+}
+
+.date-prefix-icon {
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+
+.date-readonly-text {
+  font-size: 0.92rem;
+  color: var(--color-text-primary);
+  user-select: text;
+}
+
+.date-input-field {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  width: 100%;
+  color: var(--color-text-primary);
+  font-size: 0.92rem;
+  font-family: inherit;
+  min-height: 42px;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer;
+  box-shadow: none !important;
+}
+
+/* iOS Safari & Webkit resets */
+.date-input-field::-webkit-date-and-time-value {
   text-align: left;
-  padding-left: 0;
+  margin: 0;
+  padding: 0;
 }
 
-.form-date-input::-webkit-datetime-edit {
-  padding-left: 0;
+.date-input-field::-webkit-datetime-edit {
+  padding: 0;
+  margin: 0;
 }
 
 select.form-control-figma {
