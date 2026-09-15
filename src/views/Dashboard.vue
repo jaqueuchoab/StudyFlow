@@ -115,16 +115,25 @@ async function handleActivitySaved(activityData) {
 
 <style scoped>
 .greeting-title {
-  font-size: 2.2rem;
+  font-size: 1.55rem;
   font-weight: 800;
   color: var(--color-text-primary);
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .greeting-subtitle {
-  font-size: 1rem;
+  font-size: 0.92rem;
   color: var(--color-text-secondary);
   font-weight: 400;
+}
+
+@media (max-width: 768px) {
+  .greeting-title {
+    font-size: 1.35rem;
+  }
+  .greeting-subtitle {
+    font-size: 0.86rem;
+  }
 }
 </style>

@@ -34,10 +34,16 @@
             <label class="form-label-figma">Vincular disciplina</label>
             <div class="input-icon-wrap">
               <i class="bi bi-journal-bookmark input-icon text-muted"></i>
+              <div 
+                v-if="isReadOnlyMode" 
+                class="form-control-figma form-control-icon readonly-field d-flex align-items-center"
+              >
+                <span>{{ selectedDisciplineName }}</span>
+              </div>
               <select 
+                v-else
                 v-model="formData.parentId" 
                 class="form-control-figma form-control-icon"
-                :disabled="isReadOnlyMode"
                 required
               >
                 <option value="" disabled>Selecione a disciplina...</option>
@@ -86,12 +92,17 @@
             <label class="form-label-figma">Prazo de Entrega</label>
             <div class="input-icon-wrap">
               <i class="bi bi-calendar3 input-icon text-muted"></i>
+              <div 
+                v-if="isReadOnlyMode" 
+                class="form-control-figma form-control-icon readonly-field d-flex align-items-center"
+              >
+                <span>{{ formattedDueDateDisplay }}</span>
+              </div>
               <input 
+                v-else
                 v-model="formData.dueDate" 
                 type="date" 
-                class="form-control-figma form-control-icon" 
-                :readonly="isReadOnlyMode"
-                :disabled="isReadOnlyMode"
+                class="form-control-figma form-control-icon form-date-input" 
                 required 
               />
             </div>
@@ -102,10 +113,16 @@
             <label class="form-label-figma">Categoria</label>
             <div class="input-icon-wrap">
               <i class="bi bi-layers input-icon text-muted"></i>
+              <div 
+                v-if="isReadOnlyMode" 
+                class="form-control-figma form-control-icon readonly-field d-flex align-items-center"
+              >
+                <span>{{ categoryLabelDisplay }}</span>
+              </div>
               <select 
+                v-else
                 v-model="formData.category" 
                 class="form-control-figma form-control-icon" 
-                :disabled="isReadOnlyMode"
                 required
               >
                 <option value="trabalho_avaliativo">Trabalho Avaliativo</option>
@@ -192,33 +209,22 @@
         </div>
 
         <!-- Footer Actions matching Figma -->
-        <div class="d-flex align-items-center justify-content-end gap-3 pt-2">
-          <template v-if="isReadOnlyMode">
-            <button 
-              type="button" 
-              class="btn-figma-save px-4" 
-              @click="close"
-            >
-              <span>Fechar</span>
-            </button>
-          </template>
-          <template v-else>
-            <button 
-              type="button" 
-              class="btn-cancel" 
-              @click="close"
-            >
-              Cancelar
-            </button>
-            
-            <button 
-              type="submit" 
-              class="btn-figma-save"
-            >
-              <i class="bi bi-check-lg me-1"></i>
-              <span>{{ isEditing ? 'Salvar Alterações' : 'Salvar Atividade' }}</span>
-            </button>
-          </template>
+        <div v-if="!isReadOnlyMode" class="d-flex align-items-center justify-content-end gap-3 pt-2">
+          <button 
+            type="button" 
+            class="btn-cancel" 
+            @click="close"
+          >
+            Cancelar
+          </button>
+          
+          <button 
+            type="submit" 
+            class="btn-figma-save"
+          >
+            <i class="bi bi-check-lg me-1"></i>
+            <span>{{ isEditing ? 'Salvar Alterações' : 'Salvar Atividade' }}</span>
+          </button>
         </div>
       </form>
     </div>
@@ -226,8 +232,9 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { getDisciplines } from '../../services/api'
+import { formatDateFull } from '../../utils/dateUtils'
 
 const props = defineProps({
   isOpen: {
@@ -272,6 +279,7 @@ const modalSubtitle = computed(() => {
   if (isEditing.value) return 'Edite as informações e prazos da tarefa selecionada'
   return 'Adicione uma tarefa e vincule-a à uma disciplina'
 })
+
 const disciplinesList = ref([])
 
 const formData = ref({
@@ -286,35 +294,85 @@ const formData = ref({
   parentId: ''
 })
 
-watch(() => props.isOpen, async (newVal) => {
-  if (newVal) {
+const categoryLabels = {
+  trabalho_avaliativo: 'Trabalho Avaliativo',
+  prova: 'Prova',
+  seminario: 'Seminário',
+  atividade_pontual: 'Atividade Pontual',
+  revisao: 'Revisão'
+}
+
+const categoryLabelDisplay = computed(() => {
+  return categoryLabels[formData.value.category] || formData.value.category || 'Atividade'
+})
+
+const selectedDisciplineName = computed(() => {
+  if (props.parentName) return props.parentName
+  const targetId = formData.value.parentId || props.parentId || props.activityToEdit?.disciplineId
+  const found = disciplinesList.value.find(d => String(d.id) === String(targetId))
+  if (found) return found.name
+  if (props.activityToEdit?.discipline?.name) return props.activityToEdit.discipline.name
+  if (props.activityToEdit?.parentName) return props.activityToEdit.parentName
+  return 'Disciplina'
+})
+
+const formattedDueDateDisplay = computed(() => {
+  if (!formData.value.dueDate) return 'Sem prazo definido'
+  return formatDateFull(formData.value.dueDate)
+})
+
+function syncFormData() {
+  if (props.activityToEdit) {
+    let rawDate = props.activityToEdit.dueDate
+    if (rawDate && typeof rawDate === 'string') {
+      rawDate = rawDate.split('T')[0]
+    } else if (rawDate instanceof Date) {
+      rawDate = rawDate.toISOString().split('T')[0]
+    }
+
+    formData.value = {
+      ...props.activityToEdit,
+      parentId: props.activityToEdit.disciplineId || props.activityToEdit.parentId || props.parentId || '',
+      dueDate: rawDate || new Date().toISOString().split('T')[0]
+    }
+  } else {
+    formData.value = {
+      id: '',
+      name: '',
+      description: '',
+      dueDate: new Date().toISOString().split('T')[0],
+      category: 'trabalho_avaliativo',
+      priority: 'alta',
+      status: 'em_andamento',
+      parentType: props.parentType || 'discipline',
+      parentId: props.parentId || (disciplinesList.value[0]?.id || '')
+    }
+  }
+}
+
+async function fetchDisciplines() {
+  if (disciplinesList.value.length === 0) {
     try {
       disciplinesList.value = await getDisciplines()
+      if (!formData.value.parentId && !props.parentId && disciplinesList.value.length > 0) {
+        formData.value.parentId = disciplinesList.value[0].id
+      }
     } catch (err) {
       console.error('Erro ao buscar disciplinas para o formulário:', err)
     }
-    
-    if (props.activityToEdit) {
-      formData.value = {
-        ...props.activityToEdit,
-        dueDate: props.activityToEdit.dueDate || new Date().toISOString().split('T')[0]
-      }
-    } else {
-      // Default reset for new activity
-      formData.value = {
-        id: '',
-        name: '',
-        description: '',
-        dueDate: new Date().toISOString().split('T')[0],
-        category: 'trabalho_avaliativo',
-        priority: 'alta',
-        status: 'em_andamento',
-        parentType: props.parentType || 'discipline',
-        parentId: props.parentId || (disciplinesList.value[0]?.id || '')
-      }
-    }
   }
+}
+
+onMounted(() => {
+  fetchDisciplines()
 })
+
+watch([() => props.isOpen, () => props.activityToEdit], ([isOpen]) => {
+  if (isOpen) {
+    syncFormData()
+    fetchDisciplines()
+  }
+}, { immediate: true })
 
 function close() {
   emit('close')
@@ -432,6 +490,7 @@ function handleSubmit() {
   left: 14px;
   font-size: 0.95rem;
   pointer-events: none;
+  z-index: 2;
 }
 
 .form-control-figma {
@@ -448,6 +507,29 @@ function handleSubmit() {
 
 .form-control-icon {
   padding-left: 38px !important;
+}
+
+.readonly-field {
+  min-height: 44px;
+  background-color: #F7F6F0 !important;
+  color: #363636 !important;
+  cursor: default !important;
+  border-color: #E2DFD4 !important;
+  user-select: text;
+}
+
+.form-date-input {
+  min-height: 44px;
+  padding-left: 38px !important;
+}
+
+.form-date-input::-webkit-date-and-time-value {
+  text-align: left;
+  padding-left: 0;
+}
+
+.form-date-input::-webkit-datetime-edit {
+  padding-left: 0;
 }
 
 select.form-control-figma {

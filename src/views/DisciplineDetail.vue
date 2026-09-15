@@ -2,9 +2,9 @@
   <div class="discipline-detail-view pb-5">
     <!-- Breadcrumb matching Figma -->
     <div class="breadcrumb-bar mb-4">
-      <router-link to="/disciplinas" class="breadcrumb-link">
-        <i class="bi bi-arrow-left me-1"></i>
-        Minhas Disciplinas
+      <router-link to="/disciplinas" class="breadcrumb-link" title="Voltar para Minhas Disciplinas">
+        <i class="bi bi-arrow-left"></i>
+        <span class="breadcrumb-back-text ms-1">Minhas Disciplinas</span>
       </router-link>
       <span class="breadcrumb-separator">/</span>
       <span v-if="discipline" class="breadcrumb-current">{{ discipline.name }}</span>
@@ -527,11 +527,17 @@ async function onConfirmAction() {
   gap: 0.5rem;
   font-size: 0.9rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .breadcrumb-link {
   color: #6D48C5;
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .breadcrumb-link:hover {
@@ -541,11 +547,22 @@ async function onConfirmAction() {
 
 .breadcrumb-separator {
   color: #9CA3AF;
+  flex-shrink: 0;
 }
 
 .breadcrumb-current {
   color: var(--color-text-primary);
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .breadcrumb-back-text {
+    display: none;
+  }
 }
 
 /* Header Card */

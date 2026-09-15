@@ -11,7 +11,7 @@
       <ul class="nav-list">
         <!-- Dashboard -->
         <li class="nav-item">
-          <router-link to="/" class="nav-link" active-class="active" exact>
+          <router-link to="/" class="nav-link" active-class="active" exact @click="emit('navigate')">
             <div class="nav-icon">
               <i class="bi bi-grid-fill"></i>
             </div>
@@ -21,7 +21,7 @@
 
         <!-- Minhas Disciplinas -->
         <li class="nav-item">
-          <router-link to="/disciplinas" class="nav-link" active-class="active">
+          <router-link to="/disciplinas" class="nav-link" active-class="active" @click="emit('navigate')">
             <div class="nav-icon">
               <i class="bi bi-book-half"></i>
             </div>
@@ -55,6 +55,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCurrentUser, logout } from '../../services/api'
 
+const emit = defineEmits(['navigate'])
+
 const router = useRouter()
 const currentUser = ref(null)
 
@@ -63,6 +65,7 @@ onMounted(() => {
 })
 
 function handleLogout() {
+  emit('navigate')
   logout()
   router.push('/login')
 }

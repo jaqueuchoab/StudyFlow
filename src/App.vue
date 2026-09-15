@@ -8,16 +8,11 @@
         </button>
         <span class="fw-bold text-primary fs-5">StudyFlow</span>
       </div>
-      <div class="d-flex align-items-center gap-2">
-        <router-link to="/disciplinas" class="btn btn-sm btn-outline-primary rounded-pill">
-          <i class="bi bi-book-half me-1"></i>Disciplinas
-        </router-link>
-      </div>
     </header>
 
     <!-- 1. Left Sidebar (Fixed / Persistent) -->
     <div v-if="!isLoginPage" :class="['sidebar-wrapper', { 'mobile-open': isMobileMenuOpen }]">
-      <Sidebar />
+      <Sidebar @navigate="isMobileMenuOpen = false" />
       <div v-if="isMobileMenuOpen" class="sidebar-backdrop d-lg-none" @click="isMobileMenuOpen = false"></div>
     </div>
 
@@ -29,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from './components/layout/Sidebar.vue'
 
@@ -37,6 +32,10 @@ const route = useRoute()
 const isMobileMenuOpen = ref(false)
 
 const isLoginPage = computed(() => route.name === 'Login' || route.path === '/login')
+
+watch(() => route.fullPath, () => {
+  isMobileMenuOpen.value = false
+})
 </script>
 
 <style>

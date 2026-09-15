@@ -13,14 +13,14 @@
 
     <!-- Normal Loaded State -->
     <template v-else>
-      <!-- Card 1: Disciplinas Ativas -->
+      <!-- Card 1: Disciplinas -->
       <div class="stat-card p-3 d-flex align-items-center gap-3">
         <div class="stat-icon-wrap icon-purple">
           <i class="bi bi-book-half"></i>
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="stat-number">{{ stats.totalDisciplines || 0 }}</span>
-          <span class="stat-text">Disciplinas ativas</span>
+          <span class="stat-text">Disciplinas</span>
         </div>
       </div>
 
@@ -35,14 +35,14 @@
         </div>
       </div>
 
-      <!-- Card 3: Concluídas no mês -->
+      <!-- Card 3: Concluídas -->
       <div class="stat-card p-3 d-flex align-items-center gap-3">
         <div class="stat-icon-wrap icon-green">
           <i class="bi bi-check2"></i>
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="stat-number">{{ stats.completedCount || 0 }}</span>
-          <span class="stat-text">Concluídas no mês</span>
+          <span class="stat-text">Concluídas</span>
         </div>
       </div>
     </template>

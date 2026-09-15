@@ -4,8 +4,14 @@
 
 export function parseDate(dateStr) {
   if (!dateStr) return null
-  const [year, month, day] = dateStr.split('-').map(Number)
-  return new Date(year, month - 1, day)
+  if (dateStr instanceof Date) return dateStr
+  const dateOnly = typeof dateStr === 'string' ? dateStr.split('T')[0] : ''
+  const parts = dateOnly.split('-').map(Number)
+  if (parts.length < 3 || isNaN(parts[0]) || isNaN(parts[1]) || isNaN(parts[2])) {
+    const fallback = new Date(dateStr)
+    return isNaN(fallback.getTime()) ? null : fallback
+  }
+  return new Date(parts[0], parts[1] - 1, parts[2])
 }
 
 export function formatDate(dateStr, options = { day: '2-digit', month: 'short' }) {
