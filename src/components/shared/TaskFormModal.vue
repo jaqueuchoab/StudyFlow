@@ -9,10 +9,10 @@
       <div class="d-flex align-items-start justify-content-between mb-4">
         <div>
           <h2 class="modal-title mb-1">
-            {{ isEditing ? 'Editar Atividade' : 'Nova Atividade' }}
+            {{ modalTitle }}
           </h2>
           <p class="modal-subtitle mb-0">
-            {{ isEditing ? 'Edite as informações e prazos da tarefa selecionada' : 'Adiciona uma tarefa e vincule-a à uma disciplina' }}
+            {{ modalSubtitle }}
           </p>
         </div>
         <button 
@@ -37,6 +37,7 @@
               <select 
                 v-model="formData.parentId" 
                 class="form-control-figma form-control-icon"
+                :disabled="isReadOnlyMode"
                 required
               >
                 <option value="" disabled>Selecione a disciplina...</option>
@@ -50,13 +51,15 @@
           <!-- Nome da Atividade -->
           <div class="col-md-6">
             <label class="form-label-figma">
-              Nome da Atividade <span class="text-danger">*</span>
+              Nome da Atividade <span v-if="!isReadOnlyMode" class="text-danger">*</span>
             </label>
             <input 
               v-model="formData.name" 
               type="text" 
               class="form-control-figma" 
               placeholder="Ex: Implementar Store reativa com Pinia"
+              :readonly="isReadOnlyMode"
+              :disabled="isReadOnlyMode"
               required 
               autofocus
             />
@@ -70,6 +73,8 @@
             v-model="formData.description" 
             class="form-control-figma form-textarea-figma" 
             rows="3" 
+            :readonly="isReadOnlyMode"
+            :disabled="isReadOnlyMode"
             placeholder="Criar módulo de persistência local para armazenar tarefas dos estudos e vincular ao state global da aplicação."
           ></textarea>
         </div>
@@ -85,6 +90,8 @@
                 v-model="formData.dueDate" 
                 type="date" 
                 class="form-control-figma form-control-icon" 
+                :readonly="isReadOnlyMode"
+                :disabled="isReadOnlyMode"
                 required 
               />
             </div>
@@ -98,6 +105,7 @@
               <select 
                 v-model="formData.category" 
                 class="form-control-figma form-control-icon" 
+                :disabled="isReadOnlyMode"
                 required
               >
                 <option value="trabalho_avaliativo">Trabalho Avaliativo</option>
@@ -115,12 +123,13 @@
           <!-- Prioridade -->
           <div class="col-md-6">
             <label class="form-label-figma">Prioridade</label>
-            <div class="segmented-control d-flex p-1">
+            <div class="segmented-control d-flex p-1" :class="{ 'read-only': isReadOnlyMode }">
               <button 
                 type="button" 
                 class="btn-segment flex-grow-1" 
                 :class="{ active: formData.priority === 'baixa' }"
-                @click="formData.priority = 'baixa'"
+                :disabled="isReadOnlyMode"
+                @click="!isReadOnlyMode && (formData.priority = 'baixa')"
               >
                 Baixa
               </button>
@@ -128,7 +137,8 @@
                 type="button" 
                 class="btn-segment flex-grow-1" 
                 :class="{ active: formData.priority === 'media' }"
-                @click="formData.priority = 'media'"
+                :disabled="isReadOnlyMode"
+                @click="!isReadOnlyMode && (formData.priority = 'media')"
               >
                 Média
               </button>
@@ -136,24 +146,26 @@
                 type="button" 
                 class="btn-segment flex-grow-1 btn-priority-alta" 
                 :class="{ active: formData.priority === 'alta' }"
-                @click="formData.priority = 'alta'"
+                :disabled="isReadOnlyMode"
+                @click="!isReadOnlyMode && (formData.priority = 'alta')"
               >
                 Alta
               </button>
             </div>
           </div>
 
-          <!-- Status Inicial -->
+          <!-- Status -->
           <div class="col-md-6">
             <label class="form-label-figma">
-              {{ isEditing ? 'Status' : 'Status Inicial' }}
+              {{ isEditing || isReadOnlyMode ? 'Status' : 'Status Inicial' }}
             </label>
-            <div class="segmented-control d-flex p-1">
+            <div class="segmented-control d-flex p-1" :class="{ 'read-only': isReadOnlyMode }">
               <button 
                 type="button" 
                 class="btn-segment flex-grow-1" 
                 :class="{ active: formData.status === 'a_fazer' }"
-                @click="formData.status = 'a_fazer'"
+                :disabled="isReadOnlyMode"
+                @click="!isReadOnlyMode && (formData.status = 'a_fazer')"
               >
                 A fazer
               </button>
@@ -161,7 +173,8 @@
                 type="button" 
                 class="btn-segment flex-grow-1" 
                 :class="{ active: formData.status === 'em_andamento' }"
-                @click="formData.status = 'em_andamento'"
+                :disabled="isReadOnlyMode"
+                @click="!isReadOnlyMode && (formData.status = 'em_andamento')"
               >
                 Em andamento
               </button>
@@ -169,7 +182,8 @@
                 type="button" 
                 class="btn-segment flex-grow-1" 
                 :class="{ active: formData.status === 'concluida' }"
-                @click="formData.status = 'concluida'"
+                :disabled="isReadOnlyMode"
+                @click="!isReadOnlyMode && (formData.status = 'concluida')"
               >
                 Concluída
               </button>
@@ -179,21 +193,32 @@
 
         <!-- Footer Actions matching Figma -->
         <div class="d-flex align-items-center justify-content-end gap-3 pt-2">
-          <button 
-            type="button" 
-            class="btn-cancel" 
-            @click="close"
-          >
-            Cancelar
-          </button>
-          
-          <button 
-            type="submit" 
-            class="btn-figma-save"
-          >
-            <i class="bi bi-check-lg me-1"></i>
-            <span>{{ isEditing ? 'Salvar Alterações' : 'Salvar Atividade' }}</span>
-          </button>
+          <template v-if="isReadOnlyMode">
+            <button 
+              type="button" 
+              class="btn-figma-save px-4" 
+              @click="close"
+            >
+              <span>Fechar</span>
+            </button>
+          </template>
+          <template v-else>
+            <button 
+              type="button" 
+              class="btn-cancel" 
+              @click="close"
+            >
+              Cancelar
+            </button>
+            
+            <button 
+              type="submit" 
+              class="btn-figma-save"
+            >
+              <i class="bi bi-check-lg me-1"></i>
+              <span>{{ isEditing ? 'Salvar Alterações' : 'Salvar Atividade' }}</span>
+            </button>
+          </template>
         </div>
       </form>
     </div>
@@ -206,6 +231,10 @@ import { getDisciplines } from '../../services/api'
 
 const props = defineProps({
   isOpen: {
+    type: Boolean,
+    default: false
+  },
+  isReadOnly: {
     type: Boolean,
     default: false
   },
@@ -229,7 +258,20 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'saved'])
 
-const isEditing = computed(() => Boolean(props.activityToEdit && props.activityToEdit.id))
+const isReadOnlyMode = computed(() => Boolean(props.isReadOnly))
+const isEditing = computed(() => Boolean(props.activityToEdit && props.activityToEdit.id && !props.isReadOnly))
+
+const modalTitle = computed(() => {
+  if (isReadOnlyMode.value) return 'Visualizar Atividade'
+  if (isEditing.value) return 'Editar Atividade'
+  return 'Nova Atividade'
+})
+
+const modalSubtitle = computed(() => {
+  if (isReadOnlyMode.value) return 'Detalhes e prazos da tarefa selecionada'
+  if (isEditing.value) return 'Edite as informações e prazos da tarefa selecionada'
+  return 'Adicione uma tarefa e vincule-a à uma disciplina'
+})
 const disciplinesList = ref([])
 
 const formData = ref({
@@ -423,6 +465,25 @@ select.form-control-figma {
 .form-textarea-figma {
   resize: vertical;
   min-height: 85px;
+}
+
+.form-control-figma:disabled,
+.form-control-figma[readonly] {
+  background-color: #F7F6F0 !important;
+  color: #363636 !important;
+  cursor: default !important;
+  opacity: 1 !important;
+  border-color: #E2DFD4 !important;
+}
+
+.segmented-control.read-only {
+  pointer-events: none;
+  background-color: #F7F6F0;
+  border-color: #E2DFD4;
+}
+
+.segmented-control.read-only .btn-segment {
+  cursor: default;
 }
 
 .form-control-figma:focus {

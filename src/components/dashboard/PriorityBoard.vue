@@ -41,15 +41,21 @@
       <div 
         v-for="item in filteredActivities" 
         :key="item.id" 
-        class="priority-card-item p-3 p-sm-3.5 d-flex align-items-center gap-3"
-        :class="{ 'is-completed': item.status === 'concluida' }"
+        class="priority-card-item d-flex align-items-start gap-3"
+        :class="[
+          getCardBorderClass(item),
+          { 'is-completed': item.status === 'concluida' }
+        ]"
+        role="button"
+        tabindex="0"
+        @click="$emit('select-activity', item)"
       >
         <!-- Custom Rounded Checkbox -->
         <button 
-          class="custom-checkbox-btn"
+          class="custom-checkbox-btn mt-1"
           :class="{ checked: item.status === 'concluida' }"
           :title="item.status === 'concluida' ? 'Reabrir atividade' : 'Marcar como concluída'"
-          @click="toggleStatus(item)"
+          @click.stop="toggleStatus(item)"
         >
           <i v-if="item.status === 'concluida'" class="bi bi-check-lg"></i>
         </button>
@@ -86,7 +92,7 @@
 
           <!-- Activity Title -->
           <h4 
-            class="activity-title mb-1 text-truncate"
+            class="activity-title mb-2"
             :class="{ 'completed-text': item.status === 'concluida' }"
             :title="item.name"
           >
@@ -94,9 +100,15 @@
           </h4>
 
           <!-- Subtitle: Prazo info (apenas para não concluídas) -->
-          <div v-if="item.status !== 'concluida'" class="activity-subtitle d-flex align-items-center text-muted small">
-            <i class="bi bi-calendar3 icon-calendar me-2"></i>
-            <span>Prazo: {{ formatPrazo(item.dueDate) }}</span>
+          <div v-if="item.status !== 'concluida'" class="activity-subtitle d-flex align-items-center">
+            <span v-if="isUrgent(item)" class="badge-urgent-prazo">
+              <i class="bi bi-clock me-1"></i>
+              Prazo: {{ formatPrazo(item.dueDate) }}
+            </span>
+            <span v-else class="text-muted small">
+              <i class="bi bi-calendar3 icon-calendar me-1"></i>
+              Prazo: {{ formatPrazo(item.dueDate) }}
+            </span>
           </div>
         </div>
       </div>
@@ -113,7 +125,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { parseDate } from '../../utils/dateUtils'
+import { parseDate, isRiskZone } from '../../utils/dateUtils'
 
 const props = defineProps({
   activities: {
@@ -126,7 +138,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['status-change'])
+const emit = defineEmits(['status-change', 'select-activity'])
 
 const selectedFilter = ref('todas')
 
@@ -179,6 +191,17 @@ function formatPrazo(dateStr) {
   const monthName = months[date.getMonth()]
 
   return `${day} de ${monthName}`
+}
+
+function isUrgent(item) {
+  return isRiskZone(item)
+}
+
+function getCardBorderClass(item) {
+  if (item.status === 'concluida') return 'card-border-green'
+  if (item.status === 'em_andamento' || isRiskZone(item)) return 'card-border-orange'
+  if (item.status === 'a_fazer') return 'card-border-purple'
+  return 'card-border-neutral'
 }
 
 function toggleStatus(item) {
@@ -239,16 +262,36 @@ function toggleStatus(item) {
   border-radius: var(--border-radius-card);
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  padding: 1.35rem 1.5rem;
+  cursor: pointer;
 }
 
 .priority-card-item:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+  border-color: #8366C5;
+}
+
+.card-border-orange {
+  border-left: 6px solid #F97316;
+}
+
+.card-border-purple {
+  border-left: 6px solid #8366C5;
+}
+
+.card-border-green {
+  border-left: 6px solid #84CC16;
+}
+
+.card-border-neutral {
+  border-left: 6px solid #CBD5E1;
 }
 
 .custom-checkbox-btn {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   border: 2px solid #D4D4D8;
   background: #FFFFFF;
@@ -258,6 +301,7 @@ function toggleStatus(item) {
   justify-content: center;
   cursor: pointer;
   padding: 0;
+  font-size: 1.05rem;
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
@@ -273,10 +317,12 @@ function toggleStatus(item) {
 }
 
 .tag-discipline {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 0.22rem 0.75rem;
+  padding: 0.3rem 0.85rem;
   border-radius: var(--border-radius-pill);
+  display: inline-flex;
+  align-items: center;
 }
 
 .tag-purple {
@@ -290,10 +336,12 @@ function toggleStatus(item) {
 }
 
 .tag-status {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 0.22rem 0.75rem;
+  padding: 0.3rem 0.85rem;
   border-radius: var(--border-radius-pill);
+  display: inline-flex;
+  align-items: center;
 }
 
 .tag-priority-alta {
@@ -317,8 +365,8 @@ function toggleStatus(item) {
 }
 
 .activity-title {
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-size: 1.18rem;
+  font-weight: 800;
   color: var(--color-text-primary);
   line-height: 1.35;
 }
@@ -328,8 +376,19 @@ function toggleStatus(item) {
   color: #9CA3AF !important;
 }
 
-.activity-subtitle {
+.badge-urgent-prazo {
   font-size: 0.84rem;
+  font-weight: 700;
+  background-color: #FEE2E2;
+  color: #EA580C;
+  padding: 0.32rem 0.85rem;
+  border-radius: var(--border-radius-pill);
+  display: inline-flex;
+  align-items: center;
+}
+
+.activity-subtitle {
+  font-size: 0.86rem;
   color: var(--color-text-muted);
 }
 
@@ -337,33 +396,75 @@ function toggleStatus(item) {
   font-size: 0.86rem;
 }
 
+/* Responsive adjustments for Mobile & Tablet */
+@media (max-width: 991px) {
+  .priority-card-item {
+    padding: 1.35rem 1.25rem;
+    gap: 0.85rem;
+    min-height: 110px;
+  }
+
+  .activity-title {
+    font-size: 1.15rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .custom-checkbox-btn {
+    width: 28px;
+    height: 28px;
+    margin-top: 2px;
+  }
+
+  .tag-discipline,
+  .tag-status {
+    font-size: 0.8rem;
+    padding: 0.28rem 0.8rem;
+  }
+
+  .badge-urgent-prazo {
+    font-size: 0.82rem;
+    padding: 0.3rem 0.8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .priority-card-item {
+    padding: 1.25rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .activity-title {
+    font-size: 1.12rem;
+  }
+}
+
 .skeleton-checkbox {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   flex-shrink: 0;
 }
 
 .skeleton-pill {
   width: 90px;
-  height: 20px;
+  height: 22px;
   border-radius: var(--border-radius-pill);
 }
 
 .skeleton-pill-sm {
   width: 100px;
-  height: 20px;
+  height: 22px;
   border-radius: var(--border-radius-pill);
 }
 
 .skeleton-row-title {
-  height: 20px;
+  height: 22px;
   width: 55%;
   border-radius: 4px;
 }
 
 .skeleton-row-subtitle {
-  height: 14px;
+  height: 16px;
   width: 140px;
   border-radius: 4px;
 }

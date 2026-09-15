@@ -129,7 +129,7 @@
       <div 
         v-for="item in filteredActivities" 
         :key="item.id" 
-        class="activity-card-item p-3.5 p-md-4 d-flex align-items-start gap-3"
+        class="activity-card-item d-flex align-items-start gap-3"
         :class="getCardBorderClass(item)"
       >
         <!-- Custom Rounded Checkbox -->
@@ -170,11 +170,20 @@
 
           <!-- Activity Title -->
           <h3 
-            class="activity-name mb-2"
+            class="activity-name mb-1"
             :class="{ 'text-completed': item.status === 'concluida' }"
           >
             {{ item.name }}
           </h3>
+
+          <!-- Activity Description (if present) -->
+          <p 
+            v-if="item.description && item.description.trim()" 
+            class="activity-description mb-2"
+            :class="{ 'text-completed': item.status === 'concluida' }"
+          >
+            {{ item.description }}
+          </p>
 
           <!-- Prazo info (apenas para atividades não concluídas) -->
           <div v-if="item.status !== 'concluida'" class="activity-deadline">
@@ -696,6 +705,7 @@ async function onConfirmAction() {
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
+  padding: 1.35rem 1.5rem;
 }
 
 .activity-card-item:hover {
@@ -704,25 +714,25 @@ async function onConfirmAction() {
 }
 
 .card-border-orange {
-  border-left: 5px solid #F97316;
+  border-left: 6px solid #F97316;
 }
 
 .card-border-purple {
-  border-left: 5px solid #8366C5;
+  border-left: 6px solid #8366C5;
 }
 
 .card-border-green {
-  border-left: 5px solid #84CC16;
+  border-left: 6px solid #84CC16;
 }
 
 .card-border-neutral {
-  border-left: 5px solid #CBD5E1;
+  border-left: 6px solid #CBD5E1;
 }
 
 /* Custom Checkbox */
 .custom-checkbox-btn {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   border: 2px solid #D4D4D8;
   background: #FFFFFF;
@@ -732,6 +742,7 @@ async function onConfirmAction() {
   justify-content: center;
   cursor: pointer;
   padding: 0;
+  font-size: 1.05rem;
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
@@ -748,19 +759,23 @@ async function onConfirmAction() {
 
 /* Tags */
 .tag-category-pill {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 0.22rem 0.75rem;
+  padding: 0.3rem 0.85rem;
   border-radius: var(--border-radius-pill);
   background-color: #ECE8FA;
   color: #6D48C5;
+  display: inline-flex;
+  align-items: center;
 }
 
 .tag-priority-pill {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 0.22rem 0.75rem;
+  padding: 0.3rem 0.85rem;
   border-radius: var(--border-radius-pill);
+  display: inline-flex;
+  align-items: center;
 }
 
 .tag-priority-alta {
@@ -779,10 +794,12 @@ async function onConfirmAction() {
 }
 
 .tag-status-pill {
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 0.22rem 0.75rem;
+  padding: 0.3rem 0.85rem;
   border-radius: var(--border-radius-pill);
+  display: inline-flex;
+  align-items: center;
 }
 
 .tag-status-neutral {
@@ -796,10 +813,17 @@ async function onConfirmAction() {
 }
 
 .activity-name {
-  font-size: 1.05rem;
+  font-size: 1.18rem;
   font-weight: 800;
   color: #363636;
-  line-height: 1.3;
+  line-height: 1.35;
+}
+
+.activity-description {
+  font-size: 0.9rem;
+  color: #52525B;
+  line-height: 1.45;
+  word-break: break-word;
 }
 
 .text-completed {
@@ -808,19 +832,23 @@ async function onConfirmAction() {
 }
 
 .badge-urgent-prazo {
-  font-size: 0.78rem;
+  font-size: 0.84rem;
   font-weight: 700;
   background-color: #FEE2E2;
   color: #EA580C;
-  padding: 0.28rem 0.75rem;
+  padding: 0.32rem 0.85rem;
   border-radius: var(--border-radius-pill);
   display: inline-flex;
   align-items: center;
 }
 
+.activity-deadline .small {
+  font-size: 0.86rem !important;
+}
+
 .btn-item-action {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   border-radius: 8px;
   background: transparent;
   border: none;
@@ -829,6 +857,7 @@ async function onConfirmAction() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  font-size: 1.05rem;
   transition: all 0.2s ease;
 }
 
@@ -840,6 +869,55 @@ async function onConfirmAction() {
 .btn-item-action.text-danger:hover {
   background-color: #FEE2E2;
   color: #DC2626;
+}
+
+/* Responsive adjustments for Mobile & Tablet */
+@media (max-width: 991px) {
+  .activity-card-item {
+    padding: 1.35rem 1.25rem;
+    gap: 0.85rem;
+    min-height: 110px;
+  }
+
+  .activity-name {
+    font-size: 1.15rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .custom-checkbox-btn {
+    width: 28px;
+    height: 28px;
+    margin-top: 2px;
+  }
+
+  .tag-category-pill,
+  .tag-priority-pill,
+  .tag-status-pill {
+    font-size: 0.8rem;
+    padding: 0.28rem 0.8rem;
+  }
+
+  .badge-urgent-prazo {
+    font-size: 0.82rem;
+    padding: 0.3rem 0.8rem;
+  }
+
+  .btn-item-action {
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .activity-card-item {
+    padding: 1.25rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .activity-name {
+    font-size: 1.12rem;
+  }
 }
 
 .empty-state-card {

@@ -3,7 +3,7 @@
  * Replaces localStorage with backend Node.js + Prisma API
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
+const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'https://studyflow-validation.vercel.app/api')
 
 // Helper para obter o usuário atual salvo na sessão local
 export function getCurrentUser() {
@@ -97,7 +97,7 @@ export async function getDisciplineById(id) {
 }
 
 export async function saveDiscipline(discipline) {
-  if (discipline.id && !discipline.id.startsWith('disc_')) {
+  if (discipline.id) {
     return request(`/disciplines/${discipline.id}`, {
       method: 'PUT',
       body: JSON.stringify(discipline)
@@ -126,7 +126,7 @@ export async function getActivitiesByParent(parentType, parentId) {
 }
 
 export async function saveActivity(activity) {
-  if (activity.id && !activity.id.startsWith('act_')) {
+  if (activity.id) {
     return request(`/activities/${activity.id}`, {
       method: 'PUT',
       body: JSON.stringify(activity)

@@ -33,7 +33,12 @@
         :key="item.id" 
         class="col-md-6 d-flex"
       >
-        <div class="risk-card p-3 p-xl-4 h-100 w-100 d-flex flex-column justify-content-between">
+        <div 
+          class="risk-card p-3 p-xl-4 h-100 w-100 d-flex flex-column justify-content-between"
+          role="button"
+          tabindex="0"
+          @click="$emit('select-activity', item)"
+        >
           <div>
             <!-- Tags row: Discipline + Urgency -->
             <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
@@ -94,6 +99,8 @@ const props = defineProps({
     default: false
   }
 })
+
+const emit = defineEmits(['status-change', 'select-activity'])
 
 const criticalActivities = computed(() => {
   // Show up to 2 top critical items (matching Figma 2 cards)
@@ -169,11 +176,13 @@ function formatDateTime(item) {
   border-radius: var(--border-radius-card);
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .risk-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  border-color: #8366C5;
 }
 
 .tag-discipline {

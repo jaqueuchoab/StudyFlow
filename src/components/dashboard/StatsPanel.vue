@@ -24,14 +24,14 @@
         </div>
       </div>
 
-      <!-- Card 2: A Fazer Pendentes -->
+      <!-- Card 2: A Fazer -->
       <div class="stat-card p-3 d-flex align-items-center gap-3">
         <div class="stat-icon-wrap icon-orange">
           <i class="bi bi-calendar-event"></i>
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="stat-number">{{ stats.pendingCount || 0 }}</span>
-          <span class="stat-text">A fazer pendentes</span>
+          <span class="stat-text">A fazer</span>
         </div>
       </div>
 

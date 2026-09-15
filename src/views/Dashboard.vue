@@ -16,6 +16,7 @@
           :activities="urgentActivities" 
           :is-loading="isLoading"
           @status-change="handleStatusChange" 
+          @select-activity="openEditActivityModal"
         />
       </div>
     </div>
@@ -26,13 +27,18 @@
         :activities="priorityActivities" 
         :is-loading="isLoading"
         @status-change="handleStatusChange" 
+        @select-activity="openEditActivityModal"
       />
     </div>
 
-    <!-- Task Form Modal -->
+    <!-- Task Form Modal (View/Edit) -->
     <TaskFormModal
       :is-open="isTaskModalOpen"
       :activity-to-edit="activityToEdit"
+      :is-read-only="isTaskModalReadOnly"
+      parent-type="discipline"
+      :parent-id="activityToEdit?.disciplineId || activityToEdit?.parentId || ''"
+      :parent-name="activityToEdit?.discipline?.name || activityToEdit?.parentName || ''"
       @close="isTaskModalOpen = false"
       @saved="handleActivitySaved"
     />
@@ -59,6 +65,7 @@ const priorityActivities = ref([])
 const urgentActivities = ref([])
 
 const isTaskModalOpen = ref(false)
+const isTaskModalReadOnly = ref(true)
 const activityToEdit = ref(null)
 
 async function loadData() {
@@ -84,8 +91,19 @@ async function handleStatusChange({ id, status }) {
   await loadData()
 }
 
+function openEditActivityModal(activity) {
+  activityToEdit.value = {
+    ...activity,
+    parentId: activity.disciplineId || activity.parentId || '',
+    dueDate: activity.dueDate ? (typeof activity.dueDate === 'string' ? activity.dueDate.split('T')[0] : new Date(activity.dueDate).toISOString().split('T')[0]) : ''
+  }
+  isTaskModalReadOnly.value = true
+  isTaskModalOpen.value = true
+}
+
 function openNewActivityModal() {
   activityToEdit.value = null
+  isTaskModalReadOnly.value = false
   isTaskModalOpen.value = true
 }
 
