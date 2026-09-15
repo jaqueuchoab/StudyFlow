@@ -5,17 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "server": "node server/index.js",
+    "server:seed": "node server/src/seed.js",
+    "build": "npm --prefix server run prisma:generate && vite build",
+    "postinstall": "npm --prefix server install && npm --prefix server run prisma:generate",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@prisma/client": "^5.19.1",
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.11.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.20.0",
     "vue": "^3.4.21",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
+    "prisma": "^5.19.1",
     "vite": "^5.1.6"
   }
 }

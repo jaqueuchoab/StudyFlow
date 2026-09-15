@@ -350,7 +350,17 @@ export function getDisciplinesWithMetrics() {
       if (a.parentName && disc.name && a.parentName.trim().toLowerCase() === disc.name.trim().toLowerCase()) return true
       return false
     })
-    const pending = discActivities.filter(a => a.status !== 'concluida').length
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const pending = discActivities.filter(a => {
+      if (a.status === 'concluida') return false
+      if (!a.dueDate) return false
+      const due = new Date(a.dueDate)
+      due.setHours(0, 0, 0, 0)
+      return due < today
+    }).length
     const completed = discActivities.filter(a => a.status === 'concluida').length
 
     return {

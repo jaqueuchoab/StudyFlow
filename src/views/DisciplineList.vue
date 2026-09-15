@@ -39,47 +39,67 @@
 
     <!-- 3-Column Grid matching Figma -->
     <div class="row g-4">
-      <!-- Discipline Cards -->
-      <div 
-        v-for="disc in filteredDisciplines" 
-        :key="disc.id" 
-        class="col-12 col-md-6 col-lg-4"
-      >
-        <div class="discipline-card p-4 h-100 d-flex flex-column justify-content-between">
-          <div>
-            <!-- Badges: Workload & Pendências -->
-            <div class="d-flex align-items-center gap-2 mb-3">
-              <span class="badge-workload">
-                <i class="bi bi-clock me-1"></i>
-                {{ disc.workload }}h
-              </span>
-              <span v-if="disc.pendingActivities > 0" class="badge-pending-pill">
-                <i class="bi bi-list-check me-1"></i>
-                {{ disc.pendingActivities }} {{ disc.pendingActivities === 1 ? 'pendência' : 'pendências' }}
-              </span>
+      <!-- Skeleton Loading Cards -->
+      <template v-if="isLoading">
+        <div v-for="n in 5" :key="n" class="col-12 col-md-6 col-lg-4">
+          <div class="discipline-card p-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="skeleton-shimmer skeleton-workload-badge"></div>
+              </div>
+              <div class="skeleton-shimmer skeleton-disc-title mb-2"></div>
+              <div class="skeleton-shimmer skeleton-disc-prof mb-4"></div>
             </div>
-
-            <!-- Discipline Title -->
-            <h3 class="discipline-name mb-2 text-truncate" :title="disc.name">
-              {{ disc.name }}
-            </h3>
-
-            <!-- Professor Line -->
-            <div class="discipline-professor mb-4 d-flex align-items-center gap-2 text-muted">
-              <i class="bi bi-person"></i>
-              <span>{{ disc.professor || 'Sem professor informado' }}</span>
+            <div class="card-footer-action pt-3 border-top-subtle d-flex justify-content-end">
+              <div class="skeleton-shimmer skeleton-link-action"></div>
             </div>
-          </div>
-
-          <!-- Divider & Footer Link -->
-          <div class="card-footer-action pt-3 border-top-subtle d-flex justify-content-end align-items-center">
-            <router-link :to="'/disciplinas/' + disc.id" class="link-access-details">
-              Acessar detalhes
-              <i class="bi bi-arrow-right ms-1"></i>
-            </router-link>
           </div>
         </div>
-      </div>
+      </template>
+
+      <!-- Discipline Cards -->
+      <template v-else>
+        <div 
+          v-for="disc in filteredDisciplines" 
+          :key="disc.id" 
+          class="col-12 col-md-6 col-lg-4"
+        >
+          <div class="discipline-card p-4 h-100 d-flex flex-column justify-content-between">
+            <div>
+              <!-- Badges: Workload & Pendências -->
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge-workload">
+                  <i class="bi bi-clock me-1"></i>
+                  {{ disc.workload }}h
+                </span>
+                <span v-if="disc.pendingActivities > 0" class="badge-pending-pill">
+                  <i class="bi bi-list-check me-1"></i>
+                  {{ disc.pendingActivities }} {{ disc.pendingActivities === 1 ? 'pendência' : 'pendências' }}
+                </span>
+              </div>
+
+              <!-- Discipline Title -->
+              <h3 class="discipline-name mb-2 text-truncate" :title="disc.name">
+                {{ disc.name }}
+              </h3>
+
+              <!-- Professor Line -->
+              <div class="discipline-professor mb-4 d-flex align-items-center gap-2 text-muted">
+                <i class="bi bi-person"></i>
+                <span>{{ disc.professor || 'Sem professor informado' }}</span>
+              </div>
+            </div>
+
+            <!-- Divider & Footer Link -->
+            <div class="card-footer-action pt-3 border-top-subtle d-flex justify-content-end align-items-center">
+              <router-link :to="'/disciplinas/' + disc.id" class="link-access-details">
+                Acessar detalhes
+                <i class="bi bi-arrow-right ms-1"></i>
+              </router-link>
+            </div>
+          </div>
+        </div>
+      </template>
 
       <!-- Add New Discipline Card (Dashed border) matching Figma -->
       <div class="col-12 col-md-6 col-lg-4">
@@ -99,7 +119,7 @@
     </div>
 
     <!-- Empty search result fallback -->
-    <div v-if="filteredDisciplines.length === 0 && searchQuery" class="text-center py-5">
+    <div v-if="!isLoading && filteredDisciplines.length === 0 && searchQuery" class="text-center py-5">
       <i class="bi bi-search fs-1 text-muted d-block mb-3"></i>
       <h5 class="fw-bold">Nenhuma disciplina encontrada</h5>
       <p class="text-muted">Não encontramos nenhuma disciplina com o termo "{{ searchQuery }}".</p>
@@ -112,14 +132,21 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getDisciplinesWithMetrics } from '../services/storage'
+import { getDisciplinesWithMetrics } from '../services/api'
 
 const disciplines = ref([])
+const isLoading = ref(true)
 const searchQuery = ref('')
 const sortBy = ref('pending') // 'pending' | 'total'
 
-function loadData() {
-  disciplines.value = getDisciplinesWithMetrics()
+async function loadData() {
+  try {
+    disciplines.value = await getDisciplinesWithMetrics()
+  } catch (err) {
+    console.error('Erro ao carregar disciplinas:', err)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 onMounted(() => {
@@ -343,5 +370,29 @@ const filteredDisciplines = computed(() => {
 
 .add-card-subtitle {
   color: var(--color-text-muted);
+}
+
+.skeleton-workload-badge {
+  width: 55px;
+  height: 24px;
+  border-radius: var(--border-radius-pill);
+}
+
+.skeleton-disc-title {
+  height: 24px;
+  width: 80%;
+  border-radius: 6px;
+}
+
+.skeleton-disc-prof {
+  height: 16px;
+  width: 60%;
+  border-radius: 4px;
+}
+
+.skeleton-link-action {
+  height: 16px;
+  width: 110px;
+  border-radius: 4px;
 }
 </style>

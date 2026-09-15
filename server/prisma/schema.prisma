@@ -1,0 +1,59 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String       @id @default(uuid())
+  name        String
+  email       String       @unique
+  password    String
+  disciplines Discipline[]
+  activities  Activity[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Discipline {
+  id           String     @id @default(uuid())
+  name         String
+  professor    String?
+  course       String?
+  workload     Int        @default(60)
+  description  String?
+  themeColor   String     @default("#8366C5") @map("theme_color")
+  illustration String     @default("desktop")
+  userId       String     @map("user_id")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activities   Activity[]
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  @@map("disciplines")
+}
+
+model Activity {
+  id           String      @id @default(uuid())
+  name         String
+  description  String?
+  dueDate      DateTime?   @map("due_date")
+  category     String      @default("atividade_pontual")
+  priority     String      @default("media")
+  status       String      @default("a_fazer")
+  completedAt  String?     @map("completed_at")
+  disciplineId String?     @map("discipline_id")
+  discipline   Discipline? @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  userId       String      @map("user_id")
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@map("activities")
+}

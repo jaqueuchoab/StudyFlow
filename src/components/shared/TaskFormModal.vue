@@ -202,7 +202,7 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
-import { getDisciplines } from '../../services/storage'
+import { getDisciplines } from '../../services/api'
 
 const props = defineProps({
   isOpen: {
@@ -244,9 +244,13 @@ const formData = ref({
   parentId: ''
 })
 
-watch(() => props.isOpen, (newVal) => {
+watch(() => props.isOpen, async (newVal) => {
   if (newVal) {
-    disciplinesList.value = getDisciplines()
+    try {
+      disciplinesList.value = await getDisciplines()
+    } catch (err) {
+      console.error('Erro ao buscar disciplinas para o formulário:', err)
+    }
     
     if (props.activityToEdit) {
       formData.value = {

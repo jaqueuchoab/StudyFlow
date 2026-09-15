@@ -27,3 +27,5 @@ Thumbs.db
 *.tsbuildinfo
 
 .env
+.env.*
+server/.env

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="discipline" class="discipline-detail-view pb-5">
+  <div class="discipline-detail-view pb-5">
     <!-- Breadcrumb matching Figma -->
     <div class="breadcrumb-bar mb-4">
       <router-link to="/disciplinas" class="breadcrumb-link">
@@ -7,12 +7,13 @@
         Minhas Disciplinas
       </router-link>
       <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-current">{{ discipline.name }}</span>
+      <span v-if="discipline" class="breadcrumb-current">{{ discipline.name }}</span>
+      <span v-else class="skeleton-shimmer skeleton-breadcrumb"></span>
     </div>
 
     <!-- Top Header Card matching Figma -->
     <div class="header-card p-4 p-md-4.5 mb-4">
-      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+      <div v-if="discipline" class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
         <!-- Left: Title & Professor -->
         <div>
           <h1 class="discipline-title mb-2">{{ discipline.name }}</h1>
@@ -47,6 +48,18 @@
           >
             <i class="bi bi-trash3"></i>
           </button>
+        </div>
+      </div>
+
+      <!-- Header Skeleton Fallback if cold navigation -->
+      <div v-else class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+          <div class="skeleton-shimmer skeleton-title mb-2"></div>
+          <div class="skeleton-shimmer skeleton-subtitle"></div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="skeleton-shimmer skeleton-btn"></div>
+          <div class="skeleton-shimmer skeleton-btn"></div>
         </div>
       </div>
     </div>
@@ -124,7 +137,7 @@
           class="custom-checkbox-btn mt-1" 
           :class="{ checked: item.status === 'concluida' }"
           :title="item.status === 'concluida' ? 'Reabrir atividade' : 'Concluir atividade'"
-          @click="toggleStatus(item)"
+          @click="toggleItemStatus(item)"
         >
           <i v-if="item.status === 'concluida'" class="bi bi-check-lg"></i>
         </button>
@@ -199,12 +212,24 @@
       </div>
     </div>
 
+    <!-- Skeleton Loading Cards when fetching without existing activities -->
+    <div v-else-if="loadingActivities" class="d-flex flex-column gap-3">
+      <div v-for="n in 3" :key="n" class="skeleton-card-item p-3.5 p-md-4">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <div class="skeleton-shimmer skeleton-tag"></div>
+          <div class="skeleton-shimmer skeleton-tag"></div>
+        </div>
+        <div class="skeleton-shimmer skeleton-title mb-2"></div>
+        <div class="skeleton-shimmer skeleton-subtitle"></div>
+      </div>
+    </div>
+
     <!-- Empty State -->
     <div v-else class="empty-state-card p-5 text-center">
       <i class="bi bi-folder-check fs-1 text-primary d-block mb-3"></i>
       <h5 class="fw-bold mb-1">Nenhuma atividade encontrada</h5>
       <p class="text-muted mb-4 small">Nenhuma atividade corresponde aos filtros selecionados.</p>
-      <button class="btn-figma-accent px-4" @click="openAddActivityModal">
+      <button v-if="discipline" class="btn-figma-accent px-4" @click="openAddActivityModal">
         <i class="bi bi-plus-lg me-1"></i>
         Cadastrar Atividade
       </button>
@@ -212,6 +237,7 @@
 
     <!-- Shared Task Modal for Adding/Editing -->
     <TaskFormModal
+      v-if="discipline"
       :is-open="isTaskModalOpen"
       :activity-to-edit="activityToEdit"
       parent-type="discipline"
@@ -233,34 +259,42 @@
       @close="confirmModalConfig.isOpen = false"
     />
   </div>
-
-  <div v-else class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Carregando disciplina...</span>
-    </div>
-  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TaskFormModal from '../components/shared/TaskFormModal.vue'
 import ConfirmModal from '../components/shared/ConfirmModal.vue'
 import {
   getDisciplineById,
+  getCachedDiscipline,
   deleteDiscipline,
-  getActivitiesByParent,
   saveActivity,
   deleteActivity,
   updateActivityStatus
-} from '../services/storage'
+} from '../services/api'
 import { parseDate, isRiskZone } from '../utils/dateUtils'
 
 const route = useRoute()
 const router = useRouter()
 
-const discipline = ref(null)
-const activities = ref([])
+// Initialize immediately with cached data if available for 0ms transition
+const initialCached = getCachedDiscipline(route.params.id)
+const discipline = ref(initialCached)
+const activities = ref(
+  initialCached?.activities
+    ? initialCached.activities.map(act => ({
+        ...act,
+        dueDate: act.dueDate ? (typeof act.dueDate === 'string' ? act.dueDate.split('T')[0] : new Date(act.dueDate).toISOString().split('T')[0]) : null,
+        parentId: act.disciplineId || initialCached.id,
+        parentName: initialCached.name,
+        parentColor: initialCached.themeColor
+      }))
+    : []
+)
+
+const loadingActivities = ref(!initialCached || activities.value.length === 0)
 
 const selectedStatus = ref('all')
 const selectedPriority = ref('all')
@@ -279,19 +313,56 @@ const confirmModalConfig = ref({
   action: null
 })
 
-function loadData() {
+async function loadData() {
   const discId = route.params.id
-  const d = getDisciplineById(discId)
-  if (!d) {
-    router.push('/disciplinas')
-    return
+  if (!discId) return
+  
+  if (activities.value.length === 0) {
+    loadingActivities.value = true
   }
-  discipline.value = d
-  activities.value = getActivitiesByParent('discipline', discId)
+
+  try {
+    const d = await getDisciplineById(discId)
+    if (!d) {
+      router.push('/disciplinas')
+      return
+    }
+    discipline.value = d
+    activities.value = (d.activities || []).map(act => ({
+      ...act,
+      dueDate: act.dueDate ? (typeof act.dueDate === 'string' ? act.dueDate.split('T')[0] : new Date(act.dueDate).toISOString().split('T')[0]) : null,
+      parentId: act.disciplineId || d.id,
+      parentName: d.name,
+      parentColor: d.themeColor
+    }))
+  } catch (err) {
+    console.error('Erro ao carregar dados da disciplina:', err)
+  } finally {
+    loadingActivities.value = false
+  }
 }
 
 onMounted(() => {
   loadData()
+})
+
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    const cached = getCachedDiscipline(newId)
+    if (cached) {
+      discipline.value = cached
+      if (cached.activities) {
+        activities.value = cached.activities.map(act => ({
+          ...act,
+          dueDate: act.dueDate ? (typeof act.dueDate === 'string' ? act.dueDate.split('T')[0] : new Date(act.dueDate).toISOString().split('T')[0]) : null,
+          parentId: act.disciplineId || cached.id,
+          parentName: cached.name,
+          parentColor: cached.themeColor
+        }))
+      }
+    }
+    loadData()
+  }
 })
 
 function countByStatus(status) {
@@ -349,27 +420,35 @@ function formatPriority(priority) {
 }
 
 function formatStatus(status) {
-  if (status === 'em_andamento') return 'Em Andamento'
   if (status === 'concluida') return 'Concluída'
-  return 'A Fazer'
+  if (status === 'em_andamento') return 'Em Andamento'
+  if (status === 'a_fazer') return 'A Fazer'
+  return status
 }
 
-function formatDueDate(dateStr) {
-  if (!dateStr) return 'Sem prazo'
-  const date = parseDate(dateStr)
-  if (!date || isNaN(date.getTime())) return dateStr
-
-  const day = String(date.getDate()).padStart(2, '0')
-  const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-  const monthName = months[date.getMonth()]
-
-  return `${day} de ${monthName}`
+function formatDueDate(dueDate) {
+  if (!dueDate) return 'Sem data'
+  const parts = dueDate.split('-')
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`
+  }
+  return dueDate
 }
 
-function toggleStatus(item) {
-  const nextStatus = item.status === 'concluida' ? 'a_fazer' : 'concluida'
-  updateActivityStatus(item.id, nextStatus)
-  loadData()
+async function toggleItemStatus(item) {
+  const previousStatus = item.status
+  const newStatus = item.status === 'concluida' ? 'a_fazer' : 'concluida'
+  
+  // Optimistic UI update
+  item.status = newStatus
+
+  try {
+    await updateActivityStatus(item.id, newStatus)
+  } catch (err) {
+    // Revert on error
+    item.status = previousStatus
+    console.error('Erro ao atualizar status da atividade:', err)
+  }
 }
 
 function openAddActivityModal() {
@@ -382,9 +461,9 @@ function openEditActivityModal(item) {
   isTaskModalOpen.value = true
 }
 
-function handleActivitySaved(activityData) {
-  saveActivity(activityData)
-  loadData()
+async function handleActivitySaved(activityData) {
+  await saveActivity(activityData)
+  await loadData()
 }
 
 function handleDeleteActivity(id) {
@@ -395,14 +474,21 @@ function handleDeleteActivity(id) {
     confirmText: 'Sim',
     cancelText: 'Não',
     type: 'danger',
-    action: () => {
-      deleteActivity(id)
-      loadData()
+    action: async () => {
+      // Optimistic delete from UI
+      activities.value = activities.value.filter(a => a.id !== id)
+      try {
+        await deleteActivity(id)
+      } catch (err) {
+        console.error('Erro ao excluir atividade:', err)
+        await loadData()
+      }
     }
   }
 }
 
 function confirmDelete() {
+  if (!discipline.value) return
   confirmModalConfig.value = {
     isOpen: true,
     title: 'Excluir Disciplina',
@@ -410,16 +496,16 @@ function confirmDelete() {
     confirmText: 'Sim',
     cancelText: 'Não',
     type: 'danger',
-    action: () => {
-      deleteDiscipline(discipline.value.id)
+    action: async () => {
+      await deleteDiscipline(discipline.value.id)
       router.push('/disciplinas')
     }
   }
 }
 
-function onConfirmAction() {
+async function onConfirmAction() {
   if (confirmModalConfig.value.action) {
-    confirmModalConfig.value.action()
+    await confirmModalConfig.value.action()
   }
 }
 </script>
@@ -757,6 +843,53 @@ function onConfirmAction() {
 }
 
 .empty-state-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-card);
+}
+
+/* Skeleton Loading Shimmers */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #EBE9E1 25%, #F5F4EE 50%, #EBE9E1 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-breadcrumb {
+  display: inline-block;
+  width: 140px;
+  height: 18px;
+}
+
+.skeleton-title {
+  height: 28px;
+  width: 260px;
+}
+
+.skeleton-subtitle {
+  height: 18px;
+  width: 180px;
+}
+
+.skeleton-btn {
+  height: 38px;
+  width: 130px;
+  border-radius: var(--border-radius-pill);
+}
+
+.skeleton-tag {
+  height: 20px;
+  width: 80px;
+  border-radius: var(--border-radius-pill);
+}
+
+.skeleton-card-item {
   background-color: #FFFFFF;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-card);

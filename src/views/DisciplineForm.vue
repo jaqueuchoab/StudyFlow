@@ -114,32 +114,42 @@ import { useRoute, useRouter } from 'vue-router'
 import DisciplineList from './DisciplineList.vue'
 import {
   getDisciplineById,
+  getCachedDiscipline,
   saveDiscipline
-} from '../services/storage'
+} from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
 
 const isEditing = computed(() => Boolean(route.params.id))
+const cached = route.params.id ? getCachedDiscipline(route.params.id) : null
+const isLoading = ref(isEditing.value && !cached)
 
 const form = ref({
-  id: '',
-  name: '',
-  professor: '',
-  course: '',
-  workload: null,
-  description: '',
-  themeColor: '#8366C5',
-  illustration: 'desktop'
+  id: cached?.id || '',
+  name: cached?.name || '',
+  professor: cached?.professor || '',
+  course: cached?.course || '',
+  workload: cached?.workload || null,
+  description: cached?.description || '',
+  themeColor: cached?.themeColor || '#8366C5',
+  illustration: cached?.illustration || 'desktop'
 })
 
-onMounted(() => {
+onMounted(async () => {
   if (isEditing.value) {
-    const existing = getDisciplineById(route.params.id)
-    if (existing) {
-      form.value = { ...existing }
-    } else {
+    try {
+      const existing = await getDisciplineById(route.params.id)
+      if (existing) {
+        form.value = { ...existing }
+      } else {
+        router.push('/disciplinas')
+      }
+    } catch (err) {
+      console.error('Erro ao carregar disciplina:', err)
       router.push('/disciplinas')
+    } finally {
+      isLoading.value = false
     }
   } else {
     // Mode Cadastro: Campos sem preenchimento
@@ -153,6 +163,7 @@ onMounted(() => {
       themeColor: '#8366C5',
       illustration: 'desktop'
     }
+    isLoading.value = false
   }
 })
 
@@ -164,15 +175,19 @@ function handleCancel() {
   }
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.value.name.trim()) return
 
-  const saved = saveDiscipline({
-    ...form.value,
-    workload: form.value.workload ? Number(form.value.workload) : 60
-  })
+  try {
+    const saved = await saveDiscipline({
+      ...form.value,
+      workload: form.value.workload ? Number(form.value.workload) : 60
+    })
 
-  router.push(`/disciplinas/${saved.id || form.value.id}`)
+    router.push(`/disciplinas/${saved.id || form.value.id}`)
+  } catch (err) {
+    console.error('Erro ao salvar disciplina:', err)
+  }
 }
 </script>
 

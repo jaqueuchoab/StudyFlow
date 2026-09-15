@@ -10,10 +10,6 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 // Custom Design System (Graphic Garden & eCoursie Layout)
 import './assets/styles/main.css'
 
-// Initialize storage seed data
-import { initStorage } from './services/storage'
-initStorage()
-
 const app = createApp(App)
 app.use(router)
 app.mount('#app')

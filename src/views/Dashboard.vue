@@ -2,18 +2,19 @@
   <div class="dashboard-view pb-5">
     <!-- Top Header: Greeting matching Figma -->
     <div class="mb-4">
-      <h1 class="greeting-title mb-1">Olá, {estudante}!</h1>
+      <h1 class="greeting-title mb-1">Olá, {{ currentUser?.name || 'Estudante' }}!</h1>
       <p class="greeting-subtitle mb-0">Veja suas prioridades acadêmicas e mantenha seus estudos em equilíbrio.</p>
     </div>
 
     <!-- Top Section: Stats (Left) + Zona de Risco (Right) -->
     <div class="row g-4 mb-5 align-items-stretch">
       <div class="col-lg-4 col-xl-4 d-flex">
-        <StatsPanel :stats="stats" />
+        <StatsPanel :stats="stats" :is-loading="isLoading" />
       </div>
       <div class="col-lg-8 col-xl-8 d-flex">
         <UrgentDeadlines 
           :activities="urgentActivities" 
+          :is-loading="isLoading"
           @status-change="handleStatusChange" 
         />
       </div>
@@ -23,6 +24,7 @@
     <div class="mb-4">
       <PriorityBoard 
         :activities="priorityActivities" 
+        :is-loading="isLoading"
         @status-change="handleStatusChange" 
       />
     </div>
@@ -44,36 +46,42 @@ import PriorityBoard from '../components/dashboard/PriorityBoard.vue'
 import UrgentDeadlines from '../components/dashboard/UrgentDeadlines.vue'
 import TaskFormModal from '../components/shared/TaskFormModal.vue'
 import {
-  getDashboardStats,
-  getDisciplinesWithMetrics,
-  getPriorityBoardActivities,
-  getUrgentActivities,
+  getDashboardData,
   updateActivityStatus,
-  saveActivity
-} from '../services/storage'
+  saveActivity,
+  getCurrentUser
+} from '../services/api'
 
+const currentUser = ref(null)
+const isLoading = ref(true)
 const stats = ref({})
-const disciplines = ref([])
 const priorityActivities = ref([])
 const urgentActivities = ref([])
 
 const isTaskModalOpen = ref(false)
 const activityToEdit = ref(null)
 
-function loadData() {
-  stats.value = getDashboardStats()
-  disciplines.value = getDisciplinesWithMetrics()
-  priorityActivities.value = getPriorityBoardActivities()
-  urgentActivities.value = getUrgentActivities(4)
+async function loadData() {
+  try {
+    currentUser.value = getCurrentUser()
+    const data = await getDashboardData()
+    stats.value = data.stats || {}
+    urgentActivities.value = data.urgentActivities || []
+    priorityActivities.value = data.priorityActivities || []
+  } catch (err) {
+    console.error('Erro ao carregar dados da dashboard:', err)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 onMounted(() => {
   loadData()
 })
 
-function handleStatusChange({ id, status }) {
-  updateActivityStatus(id, status)
-  loadData()
+async function handleStatusChange({ id, status }) {
+  await updateActivityStatus(id, status)
+  await loadData()
 }
 
 function openNewActivityModal() {
@@ -81,9 +89,9 @@ function openNewActivityModal() {
   isTaskModalOpen.value = true
 }
 
-function handleActivitySaved(activityData) {
-  saveActivity(activityData)
-  loadData()
+async function handleActivitySaved(activityData) {
+  await saveActivity(activityData)
+  await loadData()
 }
 </script>
 

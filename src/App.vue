@@ -1,7 +1,7 @@
 <template>
-  <div class="app-container">
+  <div class="app-container" :class="{ 'login-layout': isLoginPage }">
     <!-- Mobile Top Bar with Toggle -->
-    <header class="mobile-header d-lg-none d-flex align-items-center justify-content-between p-3">
+    <header v-if="!isLoginPage" class="mobile-header d-lg-none d-flex align-items-center justify-content-between p-3">
       <div class="d-flex align-items-center gap-2">
         <button class="btn btn-sm btn-light border" @click="isMobileMenuOpen = !isMobileMenuOpen">
           <i class="bi bi-list fs-5"></i>
@@ -16,28 +16,27 @@
     </header>
 
     <!-- 1. Left Sidebar (Fixed / Persistent) -->
-    <div :class="['sidebar-wrapper', { 'mobile-open': isMobileMenuOpen }]">
+    <div v-if="!isLoginPage" :class="['sidebar-wrapper', { 'mobile-open': isMobileMenuOpen }]">
       <Sidebar />
       <div v-if="isMobileMenuOpen" class="sidebar-backdrop d-lg-none" @click="isMobileMenuOpen = false"></div>
     </div>
 
     <!-- 2. Main Center Content -->
-    <main class="main-content-area flex-grow-1" :key="refreshKey">
+    <main class="main-content-area flex-grow-1" :class="{ 'p-0': isLoginPage }">
       <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import Sidebar from './components/layout/Sidebar.vue'
 
+const route = useRoute()
 const isMobileMenuOpen = ref(false)
-const refreshKey = ref(0)
 
-function refreshCurrentView() {
-  refreshKey.value++
-}
+const isLoginPage = computed(() => route.name === 'Login' || route.path === '/login')
 </script>
 
 <style>

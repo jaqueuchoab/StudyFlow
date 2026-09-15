@@ -21,8 +21,23 @@
       </div>
     </div>
 
+    <!-- Skeleton Loading Rows -->
+    <div v-if="isLoading" class="d-flex flex-column gap-3">
+      <div v-for="n in 3" :key="n" class="priority-card-item p-3 p-sm-3.5 d-flex align-items-center gap-3">
+        <div class="skeleton-shimmer skeleton-checkbox"></div>
+        <div class="min-w-0 flex-grow-1">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="skeleton-shimmer skeleton-pill"></div>
+            <div class="skeleton-shimmer skeleton-pill-sm"></div>
+          </div>
+          <div class="skeleton-shimmer skeleton-row-title mb-2"></div>
+          <div class="skeleton-shimmer skeleton-row-subtitle"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Priority Cards List matching Figma -->
-    <div v-if="filteredActivities.length > 0" class="d-flex flex-column gap-3">
+    <div v-else-if="filteredActivities.length > 0" class="d-flex flex-column gap-3">
       <div 
         v-for="item in filteredActivities" 
         :key="item.id" 
@@ -104,6 +119,10 @@ const props = defineProps({
   activities: {
     type: Array,
     default: () => []
+  },
+  isLoading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -316,5 +335,36 @@ function toggleStatus(item) {
 
 .icon-calendar {
   font-size: 0.86rem;
+}
+
+.skeleton-checkbox {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.skeleton-pill {
+  width: 90px;
+  height: 20px;
+  border-radius: var(--border-radius-pill);
+}
+
+.skeleton-pill-sm {
+  width: 100px;
+  height: 20px;
+  border-radius: var(--border-radius-pill);
+}
+
+.skeleton-row-title {
+  height: 20px;
+  width: 55%;
+  border-radius: 4px;
+}
+
+.skeleton-row-subtitle {
+  height: 14px;
+  width: 140px;
+  border-radius: 4px;
 }
 </style>

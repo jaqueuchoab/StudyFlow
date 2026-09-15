@@ -413,3 +413,17 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     right: 1.25rem;
   }
 }
+
+/* Skeleton Loading Shimmer System */
+.skeleton-shimmer {
+  background: linear-gradient(90deg, #EBE9E1 25%, #F5F4EE 50%, #EBE9E1 75%);
+  background-size: 200% 100%;
+  animation: globalShimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes globalShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+

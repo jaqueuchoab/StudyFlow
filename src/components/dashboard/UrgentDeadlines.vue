@@ -6,8 +6,28 @@
       <span class="badge-priority-alert">Atenção Prioritária</span>
     </div>
 
+    <!-- Skeleton Loading State -->
+    <div v-if="isLoading" class="row g-3 flex-grow-1">
+      <div v-for="n in 2" :key="n" class="col-md-6 d-flex">
+        <div class="risk-card p-3 p-xl-4 h-100 w-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <div class="skeleton-shimmer skeleton-pill"></div>
+              <div class="skeleton-shimmer skeleton-pill-sm"></div>
+            </div>
+            <div class="skeleton-shimmer skeleton-card-title mb-2"></div>
+            <div class="skeleton-shimmer skeleton-desc-line mb-1"></div>
+            <div class="skeleton-shimmer skeleton-desc-line w-75 mb-3"></div>
+          </div>
+          <div class="risk-card-footer pt-2 border-top-subtle">
+            <div class="skeleton-shimmer skeleton-footer-date"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 2 Cards Side-by-Side matching Figma -->
-    <div v-if="criticalActivities.length > 0" class="row g-3 flex-grow-1">
+    <div v-else-if="criticalActivities.length > 0" class="row g-3 flex-grow-1">
       <div 
         v-for="item in criticalActivities" 
         :key="item.id" 
@@ -52,9 +72,9 @@
     </div>
 
     <!-- Empty State -->
-    <div v-else class="risk-card p-4 text-center text-muted">
-      <i class="bi bi-shield-check text-success fs-2 mb-2 d-block"></i>
-      <h6 class="fw-bold mb-1 text-dark">Nenhum prazo crítico no momento!</h6>
+    <div v-else class="risk-card p-4 text-center text-muted flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+      <i class="bi bi-shield-check text-success fs-1 mb-2 d-block"></i>
+      <h5 class="fw-bold mb-1 text-dark">Nenhum prazo crítico no momento!</h5>
       <p class="small mb-0">Você não tem entregas nos próximos 3 dias. Bom trabalho!</p>
     </div>
   </div>
@@ -68,6 +88,10 @@ const props = defineProps({
   activities: {
     type: Array,
     default: () => []
+  },
+  isLoading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -107,11 +131,14 @@ function formatDateTime(item) {
   const date = parseDate(item.dueDate)
   if (!date || isNaN(date.getTime())) return item.dueDate
 
+  const day = String(date.getDate()).padStart(2, '0')
+  const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+  const monthName = months[date.getMonth()]
+  const year = date.getFullYear()
   const weekDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
   const weekDay = weekDays[date.getDay()]
   
-  // Example default or mock hour for university assignments
-  return `${weekDay}, 23:59`
+  return `${weekDay}, ${day} de ${monthName} de ${year}`
 }
 </script>
 
@@ -199,5 +226,34 @@ function formatDateTime(item) {
 
 .border-top-subtle {
   border-top: 1px solid var(--color-border);
+}
+
+.skeleton-pill {
+  width: 90px;
+  height: 22px;
+  border-radius: var(--border-radius-pill);
+}
+
+.skeleton-pill-sm {
+  width: 110px;
+  height: 22px;
+  border-radius: var(--border-radius-pill);
+}
+
+.skeleton-card-title {
+  height: 22px;
+  width: 70%;
+  border-radius: 4px;
+}
+
+.skeleton-desc-line {
+  height: 14px;
+  border-radius: 4px;
+}
+
+.skeleton-footer-date {
+  height: 14px;
+  width: 130px;
+  border-radius: 4px;
 }
 </style>
