@@ -94,7 +94,6 @@
               class="form-control-figma custom-date-group d-flex align-items-center"
               :class="{ 'readonly-field': isReadOnlyMode }"
             >
-              <i class="bi bi-calendar3 date-prefix-icon text-muted me-2.5"></i>
               <div v-if="isReadOnlyMode" class="date-readonly-text flex-grow-1">
                 {{ formattedDueDateDisplay }}
               </div>
@@ -532,11 +531,6 @@ function handleSubmit() {
   box-shadow: 0 0 0 3px rgba(131, 102, 197, 0.15);
 }
 
-.date-prefix-icon {
-  font-size: 0.95rem;
-  flex-shrink: 0;
-  pointer-events: none;
-}
 
 .date-readonly-text {
   font-size: 0.92rem;

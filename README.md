@@ -2,7 +2,7 @@
 
 > Plataforma intuitiva para estudantes universitários gerenciarem disciplinas, prazos e atividades com foco em priorização inteligente e equilíbrio nos estudos.
 
-🔗 **Acesse a aplicação em produção:** [https://studyflow-validation.vercel.app/](https://studyflow-validation.vercel.app/)
+**Acesse a aplicação em produção:** [https://studyflow-validation.vercel.app/](https://studyflow-validation.vercel.app/)
 
 ---
 
@@ -12,17 +12,17 @@ O **StudyFlow** ajuda com a sobrecarga de prazos e a desorganização comum na v
 
 ### Principais Funcionalidades
 
-- 📊 **Dashboard Acadêmico**:
+- **Dashboard Acadêmico**:
   - Resumo rápido com indicadores de **Disciplinas**, **A Fazer** e **Concluídas**.
   - **Zona de Risco**: Destaque automático para atividades com prazos críticos.
   - **Quadro de Prioridades**: Exibição inteligente que ordena tarefas combinando nível de prioridade (alta, média, baixa) e proximidade da data de entrega.
-- 📚 **Gestão de Disciplinas**:
+- **Gestão de Disciplinas**:
   - Cadastro, edição, visualização detalhada e exclusão de matérias.
-- 📝 **Gestão de Atividades & Tarefas**:
+- **Gestão de Atividades & Tarefas**:
   - Organização por categorias: *Trabalho Avaliativo*, *Prova*, *Seminário*, *Atividade Pontual* e *Revisão*.
   - Controle de status simplificado (*A Fazer*, *Em Andamento*, *Concluída*).
   - Modais responsivos para criação, edição e consulta detalhada com formatação clara de datas.
-- 📱 **Totalmente Responsivo**:
+- **Totalmente Responsivo**:
   - Layout adaptado para navegação fluida em smartphones, tablets e desktops.
   - Menu lateral retrátil.
 
